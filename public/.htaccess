@@ -1,4 +1,4 @@
-# GMBIJOUX — site (Vite) sur hébergement cPanel Namecheap.
+# INCOMART — site (Vite) sur hébergement cPanel Namecheap.
 # Copié tel quel dans dist/ à la construction, puis déployé dans le dossier du domaine.
 DirectoryIndex index.html
 Options -Indexes
@@ -6,16 +6,13 @@ Options -Indexes
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Adresse unique : https://gmbijoux.store (sans www). L'ancienne adresse y est redirigée.
-  RewriteCond %{HTTP_HOST} ^(www\.gmbijoux\.store|gmbijoux\.mygympro\.club)$ [NC]
-  RewriteRule ^ https://gmbijoux.store%{REQUEST_URI} [L,R=301]
   RewriteCond %{HTTPS} off
   RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-  # Pages montres, sitemap et robots : complétées par l'API pour le référencement (titre, description, aperçus
+  # Pages produits, sitemap et robots : complétées par l'API pour le référencement (titre, description, aperçus
   # de partage, données Google). Voir backend/src/catalog/seo.controller.ts et l'aiguillage de main.ts.
-  RewriteRule ^(montres?(/.*)?|sitemap\.xml|robots\.txt)$ api/ [L]
+  RewriteRule ^(produits?(/.*)?|sitemap\.xml|robots\.txt)$ api/ [L]
 
   # /api est servi par l'application Node.js (cPanel → Setup Node.js App).
   RewriteRule ^api(/|$) - [L]
@@ -25,7 +22,7 @@ Options -Indexes
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
 
-  # Toutes les autres adresses (/montres, /admin…) : application React.
+  # Toutes les autres adresses (/panier, /admin…) : application React.
   RewriteRule ^ index.html [L]
 </IfModule>
 

@@ -3,7 +3,7 @@
  * L'API envoie déjà ces balises pour les pages produits (backend/src/catalog/seo.controller.ts) ;
  * on les tient à jour ici quand la navigation se fait sans recharger la page.
  */
-const ORIGIN = 'https://incomart.store';
+const ORIGIN = 'https://incomart.mygympro.club';
 export const SHOP_PITCH = 'Livraison partout au Maroc, paiement à la livraison.';
 export const HOME_TITLE = 'INCOMART — Boutique basket au Maroc · Maillots, shorts, baskets';
 export const HOME_DESCRIPTION = `Boutique de basket au Maroc : maillots, shorts, sweats, baskets et accessoires. ${SHOP_PITCH}`;
