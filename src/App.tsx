@@ -6,7 +6,7 @@ import { Footer, Header, Overlays, TopBar } from './components/Shell';
 import { useLayout, useReveal } from './layout';
 import Admin from './pages/Admin';
 import Cart, { Checkout } from './pages/Cart';
-import { About, Account, Charte, Contact, Faq, Legal, NotFound } from './pages/Content';
+import { About, Account, Contact, Faq, Legal, NotFound } from './pages/Content';
 import Home from './pages/Home';
 import Product from './pages/Product';
 import Shop, { Collections } from './pages/Shop';
@@ -25,22 +25,20 @@ const TITLES: Record<string, string> = {
   [PATHS.cgv]: 'Conditions générales de vente',
   [PATHS.privacy]: 'Confidentialité',
   [PATHS.account]: 'Mon compte',
-  [PATHS.charte]: 'Charte graphique',
 };
 /** Pages de la boutique : mêmes titres que l'API (backend/src/catalog/seo.controller.ts). */
 const SHOP_TITLES: Record<string, string> = {
-  '/montres': 'Toutes les montres',
-  '/montres/homme': 'Montres homme',
-  '/montres/femme': 'Montres femme',
-  '/montres/automatiques': 'Montres automatiques',
-  '/montres/classiques': 'Montres classiques',
-  '/montres/sport': 'Montres sport',
-  '/montres/avec-coffret': 'Montres avec coffret',
-  '/montres/boite-simple': 'Montres en boîte simple',
-  '/montres/nouveautes': 'Nouveautés',
+  '/produits': 'Toute la boutique',
+  '/produits/maillots': 'Maillots de basket',
+  '/produits/shorts': 'Shorts de basket',
+  '/produits/sweats': 'Sweats et hoodies',
+  '/produits/baskets': 'Baskets de basket',
+  '/produits/accessoires': 'Accessoires de basket',
+  '/produits/nouveautes': 'Nouveautés',
+  '/produits/promos': 'Promos',
 };
 /** Pages personnelles : jamais dans les résultats de recherche. */
-const PRIVATE = [PATHS.cart, PATHS.checkout, PATHS.account, PATHS.charte];
+const PRIVATE = [PATHS.cart, PATHS.checkout, PATHS.account];
 
 export default function App() {
   const L = useLayout();
@@ -52,15 +50,15 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0 });
     closeAll();
-    // Fiche montre : balises posées par la page elle-même (nom, prix, description).
-    if (pathname.startsWith('/montre/')) return;
-    if (pathname.startsWith(PATHS.admin)) { setMeta({ title: 'Administration — GMBIJOUX', path: pathname, noindex: true }); return; }
+    // Fiche produit : balises posées par la page elle-même (nom, prix, description).
+    if (pathname.startsWith('/produit/')) return;
+    if (pathname.startsWith(PATHS.admin)) { setMeta({ title: 'Administration — INCOMART', path: pathname, noindex: true }); return; }
     if (pathname === '/') { setMeta({ title: HOME_TITLE, path: '/' }); return; }
     const shop = SHOP_TITLES[pathname];
-    const t = shop ?? TITLES[pathname] ?? 'Montres';
+    const t = shop ?? TITLES[pathname] ?? 'Boutique';
     setMeta({
-      title: `${t} — GMBIJOUX`,
-      description: shop ? `${shop} au Maroc, boutique GMBIJOUX à Casablanca. ${SHOP_PITCH}` : undefined,
+      title: `${t} — INCOMART`,
+      description: shop ? `${shop} au Maroc, boutique INCOMART. ${SHOP_PITCH}` : undefined,
       path: pathname,
       noindex: PRIVATE.includes(pathname) || (!shop && !TITLES[pathname]),
     });
@@ -77,23 +75,23 @@ export default function App() {
 
   if (pathname.startsWith(PATHS.admin)) return <Admin />;
   // Boutique en accès privé : rien n'est affiché avant la saisie du code.
-  if (!site) return <div style={{ minHeight: '100vh', background: 'var(--ivory)' }} />;
-  if (site.private && !site.unlocked) return <AccessGate onUnlock={unlocked} />;
+  if (!site) return <div style={{ minHeight: '100vh', background: '#0A0A0A' }} />;
+  if (site.private && !site.unlocked) return <div className="store"><AccessGate onUnlock={unlocked} /></div>;
 
   const isHome = pathname === '/';
-  const isProduct = pathname.startsWith('/montre/');
+  const isProduct = pathname.startsWith('/produit/');
   const mainPb = isProduct && L.mobile ? '200px' : isHome ? '0px' : L.sec;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--ivory)', overflowX: 'clip', position: 'relative' }}>
+    <div className="store" style={{ minHeight: '100vh', background: 'var(--ivory)', color: 'var(--ink)', overflowX: 'clip', position: 'relative' }}>
       <TopBar />
       <Header />
       <main style={{ paddingBottom: mainPb }}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/montres" element={<Shop />} />
-          <Route path="/montres/:cat" element={<Shop />} />
-          <Route path="/montre/:id" element={<Product />} />
+          <Route path="/produits" element={<Shop />} />
+          <Route path="/produits/:cat" element={<Shop />} />
+          <Route path="/produit/:id" element={<Product />} />
           <Route path={PATHS.collections} element={<Collections />} />
           <Route path={PATHS.cart} element={<Cart />} />
           <Route path={PATHS.checkout} element={<Checkout />} />
@@ -103,7 +101,6 @@ export default function App() {
           <Route path={PATHS.cgv} element={<Legal kind="cgv" />} />
           <Route path={PATHS.privacy} element={<Legal kind="privacy" />} />
           <Route path={PATHS.account} element={<Account />} />
-          <Route path={PATHS.charte} element={<Charte />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

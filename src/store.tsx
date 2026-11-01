@@ -3,7 +3,7 @@ import { useCatalog } from './catalog';
 import type { Product, Variant } from './data';
 import { track } from './pixel';
 
-/** Ligne de panier : montre (slug) et, le cas échéant, déclinaison choisie. */
+/** Ligne de panier : article (slug) et, le cas échéant, déclinaison choisie. */
 export interface CartLine { id: string; qty: number; variantId?: string; }
 /** Ligne résolue avec le catalogue courant (prix et libellés à jour). */
 export interface CartItem { key: string; qty: number; product: Product; variant?: Variant; unit: number; label: string | null; sku: string; image?: string; }
@@ -60,7 +60,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => save('gm:cart', cart), [cart]);
 
-  // Une fois le catalogue chargé, retire les montres ou déclinaisons qui ne sont plus en vente.
+  // Une fois le catalogue chargé, retire les articles ou déclinaisons qui ne sont plus en vente.
   useEffect(() => {
     if (catalog.status !== 'ready') return;
     setCart((c) => {
@@ -103,7 +103,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const count = items.reduce((a, l) => a + l.qty, 0);
     const subtotal = items.reduce((a, l) => a + l.unit * l.qty, 0);
     // Remise par quantité estimée, même règle que le serveur (backend/src/shop/quantity-discount.ts) :
-    // paliers propres à un modèle (exemplaires de ce modèle), sinon paliers généraux pour les autres montres.
+    // paliers propres à un modèle (exemplaires de ce modèle), sinon paliers généraux pour les autres articles.
     const qty = (() => {
       type T = { minQty: number; amount: number };
       const best = (ts: T[], q: number) => ts.filter((t) => t.minQty <= q).sort((a, b) => b.minQty - a.minQty)[0];
@@ -121,7 +121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const n = nxt(g.tiers, g.qty); if (n) hints.push({ missing: n.minQty - g.qty, amount: n.amount, productName: g.name });
       }
       if (pool.qty) {
-        const t = best(catalog.qtyTiers, pool.qty); if (t) { amount += Math.min(t.amount, pool.sum); parts.push(`Remise ${t.minQty} montres`); }
+        const t = best(catalog.qtyTiers, pool.qty); if (t) { amount += Math.min(t.amount, pool.sum); parts.push(`Remise ${t.minQty} articles`); }
         const n = nxt(catalog.qtyTiers, pool.qty); if (n) hints.push({ missing: n.minQty - pool.qty, amount: n.amount, productName: null });
       }
       hints.sort((a, b) => a.missing - b.missing || b.amount - a.amount);

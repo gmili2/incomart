@@ -1,12 +1,12 @@
 /**
  * Titre, description et adresse officielle (canonical) de la page affichée.
- * L'API envoie déjà ces balises pour les pages montres (backend/src/catalog/seo.controller.ts) ;
+ * L'API envoie déjà ces balises pour les pages produits (backend/src/catalog/seo.controller.ts) ;
  * on les tient à jour ici quand la navigation se fait sans recharger la page.
  */
-const ORIGIN = 'https://gmbijoux.store';
-export const SHOP_PITCH = 'Livraison gratuite partout au Maroc, paiement à la livraison.';
-export const HOME_TITLE = 'GMBIJOUX — Montres homme et femme à Casablanca · Livraison gratuite au Maroc';
-export const HOME_DESCRIPTION = `Boutique de montres à Casablanca : montres homme et femme, automatiques, classiques et sport. ${SHOP_PITCH}`;
+const ORIGIN = 'https://incomart.store';
+export const SHOP_PITCH = 'Livraison partout au Maroc, paiement à la livraison.';
+export const HOME_TITLE = 'INCOMART — Boutique basket au Maroc · Maillots, shorts, baskets';
+export const HOME_DESCRIPTION = `Boutique de basket au Maroc : maillots, shorts, sweats, baskets et accessoires. ${SHOP_PITCH}`;
 
 function tag<T extends HTMLElement>(selector: string, create: () => T): T {
   return document.head.querySelector<T>(selector) ?? document.head.appendChild(create());

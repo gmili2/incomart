@@ -1,4 +1,4 @@
-/** Palier : dès `minQty` montres, `amountCents` de réduction. */
+/** Palier : dès `minQty` articles, `amountCents` de réduction. */
 export type Tier = { minQty: number; amountCents: number };
 type Line = { productId: string; name: string; quantity: number; totalCents: number };
 
@@ -7,8 +7,8 @@ const next = (tiers: Tier[], qty: number) => tiers.filter((t) => t.minQty > qty)
 
 /**
  * Remise par quantité d'un panier.
- * - Une montre qui a ses propres paliers : ils comptent les exemplaires de ce modèle (remise plafonnée à son montant).
- * - Les autres montres comptent ensemble pour les paliers généraux.
+ * - Un article qui a ses propres paliers : ils comptent les exemplaires de ce modèle (remise plafonnée à son montant).
+ * - Les autres articles comptent ensemble pour les paliers généraux.
  * Renvoie la remise totale, son libellé et le prochain palier le plus proche (« Ajoutez 1 … et économisez X DH »).
  */
 export function quantityDiscount(lines: Line[], productTiers: Map<string, Tier[]>, globalTiers: Tier[]) {
@@ -32,7 +32,7 @@ export function quantityDiscount(lines: Line[], productTiers: Map<string, Tier[]
   }
   if (pool.qty) {
     const t = best(globalTiers, pool.qty);
-    if (t) { total += Math.min(t.amountCents, pool.cents); parts.push(`Remise ${t.minQty} montres`); }
+    if (t) { total += Math.min(t.amountCents, pool.cents); parts.push(`Remise ${t.minQty} articles`); }
     const n = next(globalTiers, pool.qty);
     if (n) hints.push({ missing: n.minQty - pool.qty, amountCents: n.amountCents, productName: null });
   }

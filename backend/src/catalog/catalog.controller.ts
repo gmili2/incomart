@@ -52,7 +52,7 @@ export class CatalogController {
   @UseGuards(SiteAccessGuard)
   @Get('products')
   async products(@Query() q: ProductQuery) {
-    // Les montres d'une catégorie masquée ou d'une collection archivée n'apparaissent nulle part dans la boutique.
+    // Les articles d'une catégorie masquée ou d'une collection archivée n'apparaissent nulle part dans la boutique.
     const where: Prisma.ProductWhereInput = { ...VISIBLE };
     const and: Prisma.ProductWhereInput[] = [COLLECTION_VISIBLE];
     if (q.q) and.push({ OR: [
@@ -99,7 +99,7 @@ export class CatalogController {
   @Get('products/:slug')
   async product(@Param('slug') slug: string) {
     const p = await this.prisma.product.findFirst({ where: { slug, ...VISIBLE }, include });
-    if (!p) throw new AppError(HttpStatus.NOT_FOUND, 'PRODUCT_NOT_FOUND', 'Montre introuvable');
+    if (!p) throw new AppError(HttpStatus.NOT_FOUND, 'PRODUCT_NOT_FOUND', 'Article introuvable');
     const reviews = await this.prisma.review.findMany({
       where: { productId: p.id, status: 'APPROVED' }, orderBy: { createdAt: 'desc' }, take: 20,
       select: { id: true, rating: true, title: true, comment: true, createdAt: true, user: { select: { firstName: true, lastName: true } } },

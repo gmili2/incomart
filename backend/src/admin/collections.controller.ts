@@ -12,8 +12,8 @@ const select = {
 } as const;
 
 /**
- * Collections (toutes, archivées comprises : le formulaire d'une montre doit pouvoir garder sa collection).
- * Archiver une collection la retire de la boutique avec toutes ses montres, sans changer leur statut
+ * Collections (toutes, archivées comprises : le formulaire d’un article doit pouvoir garder sa collection).
+ * Archiver une collection la retire de la boutique avec toutes ses articles, sans changer leur statut
  * (voir catalog/visibility.ts) : la restaurer remet la boutique dans l'état précédent.
  */
 @Roles('ADMIN')

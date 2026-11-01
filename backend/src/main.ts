@@ -22,10 +22,10 @@ async function bootstrap() {
   app.useBodyParser('json', { limit: '100kb' });
   // cPanel (Passenger) monte l'API sur /api et peut retirer ce préfixe : on le rétablit pour que les routes restent identiques.
   // Pages du site confiées à l'API par le serveur web pour le référencement (public/.htaccess) : Passenger transmet
-  // l'adresse d'origine (/montre/…, /sitemap.xml…), aiguillée ici vers le contrôleur SEO.
+  // l'adresse d'origine (/produit/…, /sitemap.xml…), aiguillée ici vers le contrôleur SEO.
   app.use((req: Request, _res: Response, next: NextFunction) => {
     if (req.url === '/sitemap.xml' || req.url === '/robots.txt') req.url = '/api/v1/seo' + req.url;
-    else if (/^\/montres?(\/|$|\?)/.test(req.url)) req.url = '/api/v1/seo/page?path=' + encodeURIComponent(req.url);
+    else if (/^\/produits?(\/|$|\?)/.test(req.url)) req.url = '/api/v1/seo/page?path=' + encodeURIComponent(req.url);
     else if (!req.url.startsWith('/api/') && req.url !== '/api') req.url = '/api' + (req.url.startsWith('/') ? '' : '/') + req.url;
     next();
   });

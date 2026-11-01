@@ -85,7 +85,7 @@ type AProduct = {
   unlimited: string;
   options: VOption[]; variants: VRow[];
 };
-/** Option en cours d'édition (Couleur, Bracelet…) ; `color` affiche des pastilles. */
+/** Option en cours d'édition (Couleur, Taille…) ; `color` affiche des pastilles. */
 type VOption = { name: string; color: boolean; values: { label: string; hex: string }[] };
 /** Déclinaison en cours d'édition ; prix vides = prix du produit. */
 type VRow = { id?: string; values: string[]; sku: string; price: string; sale: string; stock: string; active: boolean; image: string };
@@ -315,7 +315,7 @@ type FieldDef = { k: string; label: string; ph?: string; type?: string; full?: b
 /* Options & déclinaisons                                               */
 /* ------------------------------------------------------------------ */
 
-const PRESETS: [string, boolean][] = [['Couleur', true], ['Bracelet', false], ['Taille', false]];
+const PRESETS: [string, boolean][] = [['Couleur', true], ['Taille', false], ['Pointure', false]];
 /** Teinte proposée par défaut quand on saisit une couleur courante (modifiable ensuite). */
 const COLOR_GUESS: Record<string, string> = {
   noir: '#111111', blanc: '#F5F5F2', bleu: '#1F3A8A', 'bleu nuit': '#1F2A44', vert: '#2F5D3A', 'vert forêt': '#2F4A3A', rouge: '#9B1C1C',
@@ -347,9 +347,9 @@ function combine(opts: VOption[], prev: VRow[], baseSku: string): VRow[] {
   });
 }
 
-/** Choix de la photo d'une déclinaison parmi les photos de la montre (clic = photo suivante). */
+/** Choix de la photo d'une déclinaison parmi les photos de l’article (clic = photo suivante). */
 function PhotoPick({ value, photos, onChange }: { value: string; photos: string[]; onChange: (v: string) => void }) {
-  if (!photos.length) return <span title="Ajoutez d’abord des photos à la montre" style={{ fontSize: 11, color: '#9A9A94' }}>—</span>;
+  if (!photos.length) return <span title="Ajoutez d’abord des photos à l’article" style={{ fontSize: 11, color: '#9A9A94' }}>—</span>;
   const i = photos.indexOf(value);
   const next = () => onChange(i + 1 < photos.length ? photos[i + 1] : '');
   return (
@@ -396,7 +396,7 @@ function VariantsEditor({ opts, vars, baseSku, basePrice, photos, onChange }: {
         <span style={monoLabel}>Options & déclinaisons</span>
         {vars.length > 0 && <span style={{ fontSize: 12, color: '#6B6B66' }}>{vars.length} déclinaison{vars.length > 1 ? 's' : ''} · stock total {total}</span>}
       </span>
-      {!opts.length && <span style={{ fontSize: 13, color: '#6B6B66', lineHeight: 1.5 }}>Proposez la montre en plusieurs couleurs, bracelets ou tailles. Chaque combinaison devient une déclinaison avec son SKU, son stock et, si besoin, son prix.</span>}
+      {!opts.length && <span style={{ fontSize: 13, color: '#6B6B66', lineHeight: 1.5 }}>Proposez l’article en plusieurs couleurs, tailles ou pointures. Chaque combinaison devient une déclinaison avec son SKU, son stock et, si besoin, son prix.</span>}
 
       {opts.map((o, i) => (
         <div key={i} style={{ ...card, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -465,7 +465,7 @@ function VariantsEditor({ opts, vars, baseSku, basePrice, photos, onChange }: {
           </div>
         </div>
       )}
-      {vars.length > 0 && <span style={{ fontSize: 12, color: '#6B6B66' }}>Prix vide : le prix de la montre s’applique. Une déclinaison inactive n’est plus proposée en boutique.</span>}
+      {vars.length > 0 && <span style={{ fontSize: 12, color: '#6B6B66' }}>Prix vide : le prix de l’article s’applique. Une déclinaison inactive n’est plus proposée en boutique.</span>}
     </div>
   );
 }
@@ -502,12 +502,12 @@ type ImportResult = {
 };
 const IMPORT_TEMPLATE = [
   'nom;prix;prix_barre;stock;sku;categorie;marque;mouvement;couleurs;diametre;etancheite;bracelet;genre;statut;description;images',
-  'Montre exemple acier;1290;1590;5;EX-001;Classiques;GMBIJOUX;Quartz;Noir|Bleu;40;50;Acier;Homme;Brouillon;Cadran soleil, verre minéral.;https://exemple.com/photo1.jpg | https://exemple.com/photo2.jpg',
+  'Maillot exemple;249;299;5;EX-001;Maillots;INCOMART;Quartz;Orange|Noir;0;0;Ample;Homme;Brouillon;Maillot en mesh respirant.;https://exemple.com/photo1.jpg | https://exemple.com/photo2.jpg',
 ].join('\r\n');
 function downloadTemplate() {
   // BOM : Excel lit alors correctement les accents.
   const url = URL.createObjectURL(new Blob(['\uFEFF' + IMPORT_TEMPLATE], { type: 'text/csv;charset=utf-8' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: 'modele-import-montres.csv' });
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'modele-import-articles.csv' });
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -525,7 +525,7 @@ function confirmMessage(o: AOrder) {
   const lines = o.lines.map((l) => `• ${l.qty} × ${l.name}${l.variant ? ` (${l.variant})` : ''}`).join('\n');
   return [
     `Bonjour ${first} 👋`,
-    `Merci pour votre commande ${o.number} sur GMBIJOUX ⌚`,
+    `Merci pour votre commande ${o.number} sur INCOMART 🏀`,
     '',
     lines,
     `Total : ${fmt(o.total)} — paiement à la livraison 💵`,
@@ -577,7 +577,7 @@ export default function Admin() {
   const [user, setUser] = useState<ApiUser | null | undefined>(undefined);
 
   useEffect(() => {
-    document.title = 'Administration — GMBIJOUX';
+    document.title = 'Administration — INCOMART';
     refreshSession().then((u) => setUser(u?.role === 'ADMIN' ? u : null));
     setLogoutHandler(() => setUser(null));
     return () => setLogoutHandler(null);
@@ -614,7 +614,7 @@ function AdminLogin({ onLogin }: { onLogin: (u: ApiUser) => void }) {
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, color: '#111', marginBottom: 6 }}>
           <img src="/logo.png" alt="" style={{ width: 44, height: 44, objectFit: 'contain' }} />
           <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <span style={{ fontStretch: '125%', fontWeight: 600, fontSize: 14, letterSpacing: '.04em' }}>GMBIJOUX</span>
+            <span style={{ fontStretch: '125%', fontWeight: 600, fontSize: 14, letterSpacing: '.04em' }}>INCOMART</span>
             <span style={{ ...monoLabel, fontSize: 9.5 }}>Administration</span>
           </span>
         </Link>
@@ -705,7 +705,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
   const toTiers = (d: { minQty: number; amountCents: number; isActive: boolean }[]) => d.map((t) => ({ minQty: String(t.minQty), amount: String(t.amountCents / 100), active: t.isActive }));
   const saveTiers = () => run(async () => {
     const body = tiers.filter((t) => t.minQty || t.amount).map((t) => ({ minQty: Number(t.minQty), amountCents: cents(t.amount), isActive: t.active }));
-    if (body.some((t) => !Number.isInteger(t.minQty) || t.minQty < 2 || !(t.amountCents > 0))) throw new ApiError(400, 'VALIDATION_ERROR', 'Chaque palier : au moins 2 montres et une remise en DH');
+    if (body.some((t) => !Number.isInteger(t.minQty) || t.minQty < 2 || !(t.amountCents > 0))) throw new ApiError(400, 'VALIDATION_ERROR', 'Chaque palier : au moins 2 articles et une remise en DH');
     setTiers(toTiers((await api<{ data: { minQty: number; amountCents: number; isActive: boolean }[] }>('/admin/quantity-discounts', { method: 'PATCH', body: { tiers: body } })).data));
   }, 'Remise par quantité enregistrée');
   const loadPromos = useCallback(() => Promise.all([
@@ -719,7 +719,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
       loadProducts(), loadOrders(), loadStats(), loadPromos(),
       apiAll<ApiReview>('/admin/reviews').then((d) => setReviews(d.map(toReview))),
       // Les catégories (masquées comprises) viennent de loadCats ; /categories ne liste que les visibles.
-      // Collections archivées comprises : une montre garde sa collection quand on la modifie.
+      // Collections archivées comprises : un article garde sa collection quand on la modifie.
       Promise.all([api<{ data: ApiCollection[] }>('/admin/collections'), api<{ data: Ref[] }>('/brands')])
         .then(([co, b]) => { setColls(co.data); setRefs((r) => ({ ...r, collections: co.data, brands: b.data })); }),
     ]).catch(fail).finally(() => setLoaded(true));
@@ -753,7 +753,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
     const tiers = ptiers.filter((t) => t.minQty || t.amount).map((t) => ({ minQty: Number(t.minQty), amountCents: cents(t.amount) }));
     if (tiers.some((t) => !Number.isInteger(t.minQty) || t.minQty < 2 || !(t.amountCents > 0))) throw new ApiError(400, 'VALIDATION_ERROR', 'Chaque palier : au moins 2 exemplaires et une remise en DH');
     applyProduct((await api<{ data: ApiProduct }>(`/admin/products/${id}/quantity-discounts`, { method: 'PUT', body: { tiers } })).data);
-  }, 'Remise de la montre enregistrée');
+  }, 'Remise de l’article enregistrée');
   const imageAction = (path: string, method: string, ok: string) =>
     run(async () => applyProduct((await api<{ data: ApiProduct }>(path, { method })).data), ok);
   const uploadProductImages = (id: string, files: File[]) => run(async () => {
@@ -783,12 +783,12 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
       await api(`/admin/products/${p.id}`, { method: 'DELETE' });
       setProducts((ps) => ps.filter((x) => x.id !== p.id));
       if (editId === p.id) setDrawer(null);
-    }, 'Montre supprimée');
+    }, 'Article supprimée');
   };
 
   const archivedColl = (name: string) => colls.some((c) => c.name === name && !c.isActive);
   const toggleColl = (c: ApiCollection) => {
-    if (c.isActive && !window.confirm(`Archiver la collection « ${c.name} » ?\n\nSes ${c._count.products} montre(s) disparaîtront de la boutique (fiches, recherche, commande). Elles restent dans l’admin avec leur statut, et « Restaurer » les remet en ligne.`)) return;
+    if (c.isActive && !window.confirm(`Archiver la collection « ${c.name} » ?\n\nSes ${c._count.products} article(s) disparaîtront de la boutique (fiches, recherche, commande). Elles restent dans l’admin avec leur statut, et « Restaurer » les remet en ligne.`)) return;
     run(async () => {
       const r = await api<{ data: ApiCollection }>(`/admin/collections/${c.id}/status`, { method: 'PATCH', body: { isActive: !c.isActive } });
       setColls((xs) => xs.map((x) => (x.id === r.data.id ? r.data : x)));
@@ -825,7 +825,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
   };
   const openProduct = (p?: AProduct) => {
     setPtiers([]);
-    if (!p) return openForm('product', null, { name: '', sku: '', reference: '', description: '', price: '', sale: '', stock: '0', status: 'Brouillon', brand: refs.brands[0]?.name ?? '', collection: COLLS[0] ?? '', category: CATS[0] ?? '', movement: 'Automatique', caseMat: 'Acier 316L', strap: '', color: 'Noir', diameter: '', water: '', glass: 'Saphir', reserve: '', warranty: '24', unlimited: 'Non' });
+    if (!p) return openForm('product', null, { name: '', sku: '', reference: '', description: '', price: '', sale: '', stock: '0', status: 'Brouillon', brand: refs.brands[0]?.name ?? '', collection: COLLS[0] ?? '', category: CATS[0] ?? '', movement: 'Quartz', caseMat: 'Acier 316L', strap: '', color: 'Noir', diameter: '0', water: '0', glass: 'Lavage à 30 °C', reserve: '', warranty: '24', unlimited: 'Non' });
     const { images: imgs, videos: vids, sold, id, options, variants, purchasable, qtyTiers, ...rest } = p;
     void sold; void purchasable;
     openForm('product', id, rest, imgs, options, variants, vids);
@@ -858,7 +858,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
   const save = async () => {
     const f = form;
     const req = {
-      product: ['name', 'sku', 'price', 'stock', 'strap', 'caseMat', 'color', 'diameter', 'water', 'glass'],
+      product: ['name', 'sku', 'price', 'stock', 'strap', 'caseMat', 'color', 'glass'],
       coupon: ['code', 'value'], promo: ['name', 'value', 'start', 'end'],
     }[drawer as 'product'];
     const errs: Record<string, string> = {};
@@ -892,7 +892,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
           setProducts((ps) => ps.map((x) => (x.id === editId ? toProduct(p) : x)));
         } else {
           let p = (await api<{ data: ApiProduct }>('/admin/products', { method: 'POST', body: { ...body, stock: vars.length || f.unlimited === 'Oui' ? 0 : Number(f.stock) } })).data;
-          // La montre existe déjà si l'enregistrement des déclinaisons échoue : on passe en modification.
+          // L’article existe déjà si l'enregistrement des déclinaisons échoue : on passe en modification.
           setProducts((ps) => [...ps, toProduct(p)]);
           setEditId(p.id);
           if (vars.length) {
@@ -900,7 +900,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
             setProducts((ps) => ps.map((x) => (x.id === p.id ? toProduct(p) : x)));
           }
         }
-        flash(editId ? 'Montre mise à jour' : 'Montre ajoutée au catalogue');
+        flash(editId ? 'Article mise à jour' : 'Article ajoutée au catalogue');
       } else if (drawer === 'coupon') {
         const body = {
           code: f.code, type: keyOf(DTYPES, f.type), value: discount(f.type, f.value), minOrderCents: cents(f.min || '0'),
@@ -940,11 +940,11 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
   const NAV: [View, string, number?][] = [['dash', 'Tableau de bord'], ['orders', 'Commandes', pendingOrders], ['products', 'Produits'], ['categories', 'Catégories'], ['promos', 'Promotions'], ['reviews', 'Avis', pendingReviews], ['clients', 'Clients']];
   const PAGES: Record<View, [string, string]> = {
     dash: ['Vue d’ensemble · ' + MONTH.format(new Date(TODAY)), 'Tableau de bord'], orders: [orders.length + ' commandes', 'Commandes'],
-    products: [products.length + ' montres au catalogue', 'Produits'], promos: ['Coupons & remises automatiques', 'Promotions'],
+    products: [products.length + ' articles au catalogue', 'Produits'], promos: ['Coupons & remises automatiques', 'Promotions'],
     reviews: [pendingReviews + ' avis à modérer', 'Avis clients'], clients: [clients.length + ' clients', 'Clients'],
     categories: [refs.categories.length + ' catégories · images de la boutique', 'Catégories'],
   };
-  const ACTION: Partial<Record<View, [string, () => void]>> = { products: ['Ajouter une montre', () => openProduct()], promos: ['Créer un coupon', () => openCoupon()] };
+  const ACTION: Partial<Record<View, [string, () => void]>> = { products: ['Ajouter un article', () => openProduct()], promos: ['Créer un coupon', () => openCoupon()] };
   const draftOf = (c: ApiCategory) => catDraft[c.id] ?? { name: c.name, description: c.description ?? '' };
 
   /* ---------- rendus partiels ---------- */
@@ -977,17 +977,18 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
 
   let groups: { title: string; fields: FieldDef[] }[] = [];
   if (drawer === 'product') groups = [
-    { title: 'Informations', fields: [{ k: 'name', label: 'Nom *', ph: 'Nocturne 40', full: true }, { k: 'sku', label: 'SKU *', ph: 'GM-NOC-40' }, { k: 'reference', label: 'Référence', ph: 'Réf. fabricant' }, { k: 'description', label: 'Description', area: true, full: true, ph: 'Cadran, finitions, usage…' }] },
+    { title: 'Informations', fields: [{ k: 'name', label: 'Nom *', ph: 'Maillot Court Orange', full: true }, { k: 'sku', label: 'SKU *', ph: 'IN-MCO-01' }, { k: 'reference', label: 'Référence', ph: 'Réf. fabricant' }, { k: 'description', label: 'Description', area: true, full: true, ph: 'Matière, coupe, usage…' }] },
     { title: 'Prix & stock', fields: [{ k: 'price', label: 'Prix (DH) *', type: 'number', ph: '13900' }, { k: 'sale', label: 'Prix promo (DH)', type: 'number', ph: 'Optionnel' }, { k: 'stock', label: form.unlimited === 'Oui' ? 'Stock (illimité)' : vars.length ? 'Stock (déclinaisons)' : 'Stock *', type: 'number', disabled: vars.length > 0 || form.unlimited === 'Oui' }, { k: 'status', label: 'Statut', options: PSTATUS.map((x) => x[1]) }, { k: 'unlimited', label: 'Stock illimité (toujours commandable, rien n’est décompté)', options: ['Non', 'Oui'], full: true }] },
     { title: 'Classement', fields: [{ k: 'category', label: 'Catégorie', options: CATS }, { k: 'collection', label: 'Collection', options: COLLS }, { k: 'brand', label: 'Marque', options: refs.brands.map((b) => b.name), full: true }] },
-    { title: 'Caractéristiques techniques', fields: [{ k: 'movement', label: 'Mouvement', options: MOVES.map((x) => x[1]) }, { k: 'caseMat', label: 'Matière du boîtier *' }, { k: 'strap', label: 'Matière du bracelet *' }, { k: 'color', label: 'Couleur *' }, { k: 'diameter', label: 'Diamètre (mm) *', type: 'number' }, { k: 'water', label: 'Étanchéité (m) *', type: 'number' }, { k: 'glass', label: 'Verre *' }, { k: 'reserve', label: 'Réserve de marche (h)', type: 'number' }, { k: 'warranty', label: 'Garantie (mois)', type: 'number' }] },
+    // Champs du modèle d'origine réutilisés : matière (boîtier), coupe (bracelet), entretien (verre).
+    { title: 'Caractéristiques', fields: [{ k: 'caseMat', label: 'Matière *', ph: 'Polyester mesh respirant' }, { k: 'strap', label: 'Coupe *', ph: 'Ample, longueur genou' }, { k: 'color', label: 'Couleur *' }, { k: 'glass', label: 'Entretien *', ph: 'Lavage à 30 °C' }] },
   ];
   else if (drawer === 'coupon') groups = [
     { title: 'Code', fields: [{ k: 'code', label: 'Code *', ph: 'BIENVENUE10', full: true }, { k: 'type', label: 'Type de remise', options: ['Pourcentage', 'Montant fixe'] }, { k: 'value', label: form.type === 'Pourcentage' ? 'Valeur (%) *' : 'Valeur (DH) *', type: 'number' }] },
     { title: 'Conditions', fields: [{ k: 'min', label: 'Commande minimum (DH)', type: 'number' }, { k: 'max', label: 'Utilisations max', type: 'number', ph: 'Illimité' }, { k: 'start', label: 'Début', type: 'date' }, { k: 'end', label: 'Expiration', type: 'date' }, { k: 'active', label: 'Statut', options: ['Actif', 'Inactif'], full: true }] },
   ];
   else if (drawer === 'promo') groups = [
-    { title: 'Remise', fields: [{ k: 'name', label: 'Nom *', ph: 'Semaine Classiques', full: true }, { k: 'type', label: 'Type', options: ['Pourcentage', 'Montant fixe'] }, { k: 'value', label: form.type === 'Pourcentage' ? 'Valeur (%) *' : 'Valeur (DH) *', type: 'number' }, { k: 'target', label: 'Cible', options: [...CATS.map((c) => 'Catégorie · ' + c), ...COLLS.map((c) => 'Collection · ' + c), 'Tout le catalogue'], full: true }] },
+    { title: 'Remise', fields: [{ k: 'name', label: 'Nom *', ph: 'Semaine Maillots', full: true }, { k: 'type', label: 'Type', options: ['Pourcentage', 'Montant fixe'] }, { k: 'value', label: form.type === 'Pourcentage' ? 'Valeur (%) *' : 'Valeur (DH) *', type: 'number' }, { k: 'target', label: 'Cible', options: [...CATS.map((c) => 'Catégorie · ' + c), ...COLLS.map((c) => 'Collection · ' + c), 'Tout le catalogue'], full: true }] },
     { title: 'Période', fields: [{ k: 'start', label: 'Début *', type: 'date' }, { k: 'end', label: 'Fin *', type: 'date' }, { k: 'active', label: 'Statut', options: ['Active', 'Inactive'], full: true }] },
   ];
 
@@ -1005,10 +1006,10 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
   }, 'Import terminé');
 
   const order = drawer === 'order' ? orders.find((o) => o.number === orderNo) : undefined;
-  const drawerHead: [string, string] = drawer === 'product' ? [editId ? 'Modifier · ' + form.sku : 'Nouvelle montre', editId ? form.name : 'Ajouter une montre']
+  const drawerHead: [string, string] = drawer === 'product' ? [editId ? 'Modifier · ' + form.sku : 'Nouvelle article', editId ? form.name : 'Ajouter un article']
     : drawer === 'coupon' ? ['Code promo', editId ? form.code : 'Créer un coupon']
     : drawer === 'promo' ? ['Promotion automatique', editId ? form.name : 'Créer une promotion']
-    : drawer === 'import' ? ['Catalogue fournisseur', 'Importer des montres']
+    : drawer === 'import' ? ['Catalogue fournisseur', 'Importer des articles']
     : order ? [order.date, order.number] : ['', ''];
   const pv = Number(form.price) || 0, sv = Number(form.sale) || 0, hasPromo = sv > 0 && sv < pv;
 
@@ -1028,10 +1029,10 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
       {/* ---------- barre latérale ---------- */}
       <aside style={{ background: '#111', color: '#fff', display: 'flex', flexDirection: m ? 'row' : 'column', gap: m ? 16 : 36, padding: m ? '10px 16px' : '28px 18px', position: 'sticky', top: 0, height: m ? 'auto' : '100vh', zIndex: 30, overflowX: 'auto' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 'none', color: '#fff' }}>
-          <img src="/logo.png" alt="GMBIJOUX" style={{ width: 44, height: 44, objectFit: 'contain', filter: 'invert(1)', mixBlendMode: 'screen' }} />
+          <img src="/logo.png" alt="INCOMART" style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: '50%' }} />
           {!m && (
             <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontStretch: '125%', fontWeight: 600, fontSize: 14, letterSpacing: '.04em' }}>GMBIJOUX</span>
+              <span style={{ fontStretch: '125%', fontWeight: 600, fontSize: 14, letterSpacing: '.04em' }}>INCOMART</span>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '.16em', textTransform: 'uppercase', color: '#8C8C86' }}>Administration</span>
             </span>
           )}
@@ -1150,7 +1151,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
               const cols = '56px minmax(220px,2fr) minmax(130px,1fr) 120px 100px 120px 170px';
               return (
                 <>
-                  <div style={thRow(cols)}><span /><span>Montre</span><span>Catégorie</span><span>Prix</span><span>Stock</span><span>Statut</span><span /></div>
+                  <div style={thRow(cols)}><span /><span>Article</span><span>Catégorie</span><span>Prix</span><span>Stock</span><span>Statut</span><span /></div>
                   {productRows.slice((productPage - 1) * ADMIN_PER_PAGE, productPage * ADMIN_PER_PAGE).map((p) => {
                     const st = Number(p.stock);
                     return (
@@ -1171,7 +1172,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                         <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                           <Pill dot={p.status === 'Actif' ? DOT.green : p.status === 'Brouillon' ? DOT.amber : DOT.grey}>{p.status}</Pill>
                           {!p.purchasable && <span style={{ fontSize: 11.5, color: '#6B6B66' }} title="Non disponible à la vente">Vitrine</span>}
-                          {archivedColl(p.collection) && <span style={{ fontSize: 11.5, color: '#6B6B66' }} title="Collection archivée : la montre n’apparaît pas dans la boutique">Collection archivée</span>}
+                          {archivedColl(p.collection) && <span style={{ fontSize: 11.5, color: '#6B6B66' }} title="Collection archivée : l’article n’apparaît pas dans la boutique">Collection archivée</span>}
                         </span>
                         <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <ActionMenu items={[
@@ -1182,7 +1183,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                               onClick: () => run(async () => {
                                 const r = await api<{ data: ApiProduct }>(`/admin/products/${p.id}/status`, { method: 'PATCH', body: { status: p.status === 'Archivé' ? 'DRAFT' : 'ARCHIVED' } });
                                 setProducts((ps) => ps.map((x) => (x.id === p.id ? toProduct(r.data) : x)));
-                              }, p.status === 'Archivé' ? 'Montre restaurée en brouillon' : 'Montre archivée'),
+                              }, p.status === 'Archivé' ? 'Article restaurée en brouillon' : 'Article archivée'),
                             },
                             { label: 'Supprimer', onClick: () => deleteProduct(p), danger: true },
                           ]} />
@@ -1190,7 +1191,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                       </div>
                     );
                   })}
-                  {!productRows.length && <div style={{ padding: '40px 20px', fontSize: 14, color: '#6B6B66' }}>{loaded ? 'Aucune montre ne correspond.' : 'Chargement…'}</div>}
+                  {!productRows.length && <div style={{ padding: '40px 20px', fontSize: 14, color: '#6B6B66' }}>{loaded ? 'Aucun article ne correspond.' : 'Chargement…'}</div>}
                 </>
               );
             })())}
@@ -1270,15 +1271,15 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 20, background: '#fff', border: '1px solid #E6E6E1' }}>
               <span style={{ fontWeight: 600, fontSize: 16 }}>Remise par quantité</span>
-              <span style={{ fontSize: 13, color: '#6B6B66' }}>Appliquée automatiquement selon le nombre de montres dans le panier (le palier le plus haut atteint). Non cumulable avec un code promo : le client obtient la réduction la plus avantageuse des deux.</span>
+              <span style={{ fontSize: 13, color: '#6B6B66' }}>Appliquée automatiquement selon le nombre d’articles dans le panier (le palier le plus haut atteint). Non cumulable avec un code promo : le client obtient la réduction la plus avantageuse des deux.</span>
               {tiers.map((t, i) => {
                 const set = (patch: Partial<typeof t>) => setTiers((xs) => xs.map((x, k) => (k === i ? { ...x, ...patch } : x)));
                 const field: CSSProperties = { width: 90, height: 40, padding: '0 12px', border: '1px solid #D9D9D4', borderRadius: 999, background: '#fff', fontSize: 14 };
                 return (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 14 }}>
                     <span>Dès</span>
-                    <input className="adm-input" type="number" min={2} value={t.minQty} aria-label="Nombre de montres" onChange={(e) => set({ minQty: e.target.value })} style={field} />
-                    <span>montres :</span>
+                    <input className="adm-input" type="number" min={2} value={t.minQty} aria-label="Nombre d’articles" onChange={(e) => set({ minQty: e.target.value })} style={field} />
+                    <span>articles :</span>
                     <span>−</span>
                     <input className="adm-input" type="number" min={1} value={t.amount} aria-label="Remise en DH" onChange={(e) => set({ amount: e.target.value })} style={field} />
                     <span>DH sur le panier</span>
@@ -1389,7 +1390,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
         {view === 'categories' && (
           <>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <input className="adm-input" value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="Nouvelle catégorie (ex. Montres connectées)"
+              <input className="adm-input" value={newCat} onChange={(e) => setNewCat(e.target.value)} placeholder="Nouvelle catégorie (ex. Articles connectées)"
                 onKeyDown={(e) => { if (e.key === 'Enter' && newCat.trim().length >= 2) catAction(async () => { await api('/admin/categories', { method: 'POST', body: { name: newCat.trim() } }); setNewCat(''); return null; }, 'Catégorie créée'); }}
                 style={{ flex: 1, minWidth: 220, maxWidth: 420, height: 44, padding: '0 18px', border: '1px solid #D9D9D4', borderRadius: 999, background: '#fff', fontSize: 14, outline: 'none' }} />
               <OutlineBtn onClick={() => { if (newCat.trim().length >= 2) catAction(async () => { await api('/admin/categories', { method: 'POST', body: { name: newCat.trim() } }); setNewCat(''); return null; }, 'Catégorie créée'); }}>+ Catégorie</OutlineBtn>
@@ -1415,11 +1416,11 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                       <textarea className="adm-input" rows={2} value={d.description} aria-label="Description" placeholder="Phrase affichée sous le titre de la catégorie" onChange={(e) => setD({ description: e.target.value })} style={{ padding: '10px 12px', border: '1px solid #D9D9D4', fontSize: 13.5, lineHeight: 1.5, resize: 'vertical', outline: 'none' }} />
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 12.5, color: '#6B6B66' }}>
-                          {!c.isActive && <strong style={{ color: '#111' }}>Masquée · </strong>}{c._count.products} montre{c._count.products > 1 ? 's' : ''} · /{c.slug}
+                          {!c.isActive && <strong style={{ color: '#111' }}>Masquée · </strong>}{c._count.products} article{c._count.products > 1 ? 's' : ''} · /{c.slug}
                         </span>
                         <span style={{ display: 'flex', gap: 6 }}>
                           <SmallBtn onClick={() => {
-                            if (c.isActive && !window.confirm(`Masquer « ${c.name} » ? Sa carte et ses ${c._count.products} montre(s) disparaîtront de la boutique (elles restent dans l’admin).`)) return;
+                            if (c.isActive && !window.confirm(`Masquer « ${c.name} » ? Sa carte et ses ${c._count.products} article(s) disparaîtront de la boutique (elles restent dans l’admin).`)) return;
                             catAction(() => api<{ data: ApiCategory }>(`/admin/categories/${c.id}`, { method: 'PATCH', body: { isActive: !c.isActive } }), c.isActive ? 'Catégorie masquée' : 'Catégorie de nouveau visible');
                           }}>{c.isActive ? 'Masquer' : 'Afficher'}</SmallBtn>
                           {!c._count.products && <SmallBtn onClick={() => { if (window.confirm(`Supprimer la catégorie « ${c.name} » ?`)) catAction(async () => { await api(`/admin/categories/${c.id}`, { method: 'DELETE' }); return null; }, 'Catégorie supprimée'); }}>Supprimer</SmallBtn>}
@@ -1435,7 +1436,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                 );
               })}
             </div>
-            <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Les images s’affichent sur les cartes « Trouver sa montre » de la boutique. Format paysage conseillé, JPG, PNG ou WebP, 5 Mo maximum. Une catégorie masquée disparaît de la boutique avec toutes ses montres ; « Afficher » la rétablit.</span>
+            <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Les images s’affichent sur les cartes « Trouver sa article » de la boutique. Format paysage conseillé, JPG, PNG ou WebP, 5 Mo maximum. Une catégorie masquée disparaît de la boutique avec toutes ses articles ; « Afficher » la rétablit.</span>
 
             <span style={{ ...monoLabel, marginTop: 24 }}>Collections</span>
             <div style={{ display: 'grid', gridTemplateColumns: m ? 'minmax(0,1fr)' : 'repeat(auto-fill,minmax(260px,1fr))', gap: 10 }}>
@@ -1444,14 +1445,14 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                   <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                     <span style={{ fontSize: 14, fontWeight: 600 }}>{c.name}</span>
                     <span style={{ fontSize: 12, color: '#6B6B66' }}>
-                      {!c.isActive && <strong style={{ color: '#111' }}>Archivée · </strong>}{c._count.products} montre{c._count.products > 1 ? 's' : ''}
+                      {!c.isActive && <strong style={{ color: '#111' }}>Archivée · </strong>}{c._count.products} article{c._count.products > 1 ? 's' : ''}
                     </span>
                   </span>
                   <SmallBtn onClick={() => toggleColl(c)}>{c.isActive ? 'Archiver' : 'Restaurer'}</SmallBtn>
                 </div>
               ))}
             </div>
-            <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Archiver une collection la retire de la boutique avec toutes ses montres, sans changer leur statut ; « Restaurer » remet tout en ligne comme avant.</span>
+            <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Archiver une collection la retire de la boutique avec toutes ses articles, sans changer leur statut ; « Restaurer » remet tout en ligne comme avant.</span>
           </>
         )}
 
@@ -1493,9 +1494,9 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
             <>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5, lineHeight: 1.6, color: '#3A3A36' }}>
                 <span style={monoLabel}>1 · Préparer le fichier</span>
-                <span>Un fichier <strong>CSV</strong> (Excel → Enregistrer sous → CSV), une ligne par montre. Colonnes obligatoires : <strong>nom</strong> et <strong>prix</strong> (en DH).
+                <span>Un fichier <strong>CSV</strong> (Excel → Enregistrer sous → CSV), une ligne par article. Colonnes obligatoires : <strong>nom</strong> et <strong>prix</strong> (en DH).
                   Facultatives : prix_barre, stock, sku, categorie, marque, mouvement, couleurs (séparées par « | »), diametre, etancheite, bracelet, genre, statut, description, images (adresses https séparées par « | »).</span>
-                <span>Les montres sont créées <strong>en brouillon</strong> (sauf statut « Actif ») : vérifiez-les puis publiez-les. Importez uniquement des produits que vous avez le droit de vendre, avec des photos autorisées par votre fournisseur.</span>
+                <span>Les articles sont créées <strong>en brouillon</strong> (sauf statut « Actif ») : vérifiez-les puis publiez-les. Importez uniquement des produits que vous avez le droit de vendre, avec des photos autorisées par votre fournisseur.</span>
                 <span><SmallBtn onClick={downloadTemplate}>Télécharger le modèle</SmallBtn></span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1509,7 +1510,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
               {importPreview && !importResult && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <span style={monoLabel}>3 · Vérifier</span>
-                  <span style={{ fontSize: 14 }}><strong>{importPreview.summary.valid}</strong> montre{importPreview.summary.valid > 1 ? 's' : ''} prête{importPreview.summary.valid > 1 ? 's' : ''} à importer
+                  <span style={{ fontSize: 14 }}><strong>{importPreview.summary.valid}</strong> article{importPreview.summary.valid > 1 ? 's' : ''} prête{importPreview.summary.valid > 1 ? 's' : ''} à importer
                     {importPreview.summary.invalid > 0 && <> · <span style={{ color: DOT.red }}>{importPreview.summary.invalid} ligne{importPreview.summary.invalid > 1 ? 's' : ''} en erreur (ignorée{importPreview.summary.invalid > 1 ? 's' : ''})</span></>}</span>
                   {importPreview.unknownColumns.length > 0 && <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Colonnes non utilisées : {importPreview.unknownColumns.join(', ')}</span>}
                   <div style={{ ...card, maxHeight: 360, overflowY: 'auto' }}>
@@ -1532,7 +1533,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <span style={monoLabel}>Résultat</span>
                   <span style={{ fontSize: 14, lineHeight: 1.6 }}>
-                    <strong>{importResult.summary.created}</strong> montre(s) créée(s) en brouillon · {importResult.summary.images} photo(s)
+                    <strong>{importResult.summary.created}</strong> article(s) créée(s) en brouillon · {importResult.summary.images} photo(s)
                     {importResult.summary.skipped > 0 && <> · {importResult.summary.skipped} déjà présente(s)</>}
                     {importResult.summary.errors > 0 && <> · <span style={{ color: DOT.red }}>{importResult.summary.errors} en erreur</span></>}
                   </span>
@@ -1546,7 +1547,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                       </div>
                     ))}
                   </div>
-                  <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Les nouvelles montres sont dans la liste avec le statut « Brouillon » : relisez-les puis publiez-les.</span>
+                  <span style={{ fontSize: 12.5, color: '#6B6B66' }}>Les nouvelles articles sont dans la liste avec le statut « Brouillon » : relisez-les puis publiez-les.</span>
                 </div>
               )}
             </>
@@ -1571,7 +1572,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                       onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ''; uploadProductImages(editId, files); }} />
                   </label>
                 </div>
-              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord la montre, puis ajoutez ses photos.</span>}
+              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord l’article, puis ajoutez ses photos.</span>}
               <span style={{ fontSize: 12, color: '#6B6B66' }}>JPG, PNG ou WebP, 5 Mo maximum, fond neutre. Cliquez sur une photo pour en faire la photo principale.</span>
             </div>
           )}
@@ -1595,8 +1596,8 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                     </label>
                   )}
                 </div>
-              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord la montre, puis ajoutez ses vidéos.</span>}
-              <span style={{ fontSize: 12, color: '#6B6B66' }}>MP4 conseillé (lisible sur tous les téléphones), MOV ou WebM, 4 vidéos par montre, affichées après les photos. Pour un chargement rapide : 15 à 30 secondes, 720p, moins de 10 Mo (40 Mo au maximum).</span>
+              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord l’article, puis ajoutez ses vidéos.</span>}
+              <span style={{ fontSize: 12, color: '#6B6B66' }}>MP4 conseillé (lisible sur tous les téléphones), MOV ou WebM, 4 vidéos par article, affichées après les photos. Pour un chargement rapide : 15 à 30 secondes, 720p, moins de 10 Mo (40 Mo au maximum).</span>
             </div>
           )}
           {drawer === 'product' && (
@@ -1623,8 +1624,8 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                     <SmallBtn dark onClick={() => saveProductTiers(editId)}>Enregistrer la remise</SmallBtn>
                   </div>
                 </>
-              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord la montre, puis réglez sa remise.</span>}
-              <span style={{ fontSize: 12, color: '#6B6B66' }}>Compte les exemplaires de ce modèle dans le panier (tous coloris confondus). Sans palier ici, la montre suit la remise générale (Promotions → Remise par quantité). Non cumulable avec un code promo : la réduction la plus avantageuse s’applique.</span>
+              ) : <span style={{ fontSize: 13, color: '#6B6B66' }}>Enregistrez d’abord l’article, puis réglez sa remise.</span>}
+              <span style={{ fontSize: 12, color: '#6B6B66' }}>Compte les exemplaires de ce modèle dans le panier (tous coloris confondus). Sans palier ici, l’article suit la remise générale (Promotions → Remise par quantité). Non cumulable avec un code promo : la réduction la plus avantageuse s’applique.</span>
             </div>
           )}
 
@@ -1678,7 +1679,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
                 <div style={{ ...card, padding: 18, display: 'flex', flexDirection: 'column' }}>
                   {order.lines.map((l) => (
                     <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '52px minmax(0,1fr) auto', gap: 14, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #EDEDEA' }}>
-                      {/* Photo enregistrée à l'achat (coloris choisi) ; motif rayé si la montre n'en avait pas. */}
+                      {/* Photo enregistrée à l'achat (coloris choisi) ; motif rayé si l’article n'en avait pas. */}
                       <span style={{ ...thumb, aspectRatio: '1', ...(l.image && { backgroundImage: `url(${l.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }) }} role={l.image ? 'img' : undefined} aria-label={l.image ? l.name : undefined} />
                       <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}><span style={{ fontSize: 13.5, fontWeight: 600, textTransform: 'uppercase' }}>{l.name}</span><span style={{ fontSize: 12, color: '#6B6B66' }}>{l.variant ? l.variant + ' · ' : ''}{l.qty} × {fmt(l.unit)} · prix figé à l’achat</span></span>
                       <span style={{ fontSize: 14 }}>{fmt(l.unit * l.qty)}</span>
@@ -1757,7 +1758,7 @@ function AdminPanel({ user, onLogout }: { user: ApiUser; onLogout: () => void })
           <button className="btn btn-outline" onClick={() => setDrawer(null)} style={{ height: 48 }}>{drawer === 'order' || importResult ? 'Fermer' : 'Annuler'}</button>
           {drawer === 'import' && importPreview && !importResult && importPreview.summary.valid > 0 && (
             <button className="btn btn-primary" disabled={busy} onClick={runImport} style={{ height: 48, opacity: busy ? 0.6 : 1 }}>
-              {busy ? 'Import en cours…' : `Importer ${importPreview.summary.valid} montre${importPreview.summary.valid > 1 ? 's' : ''}`}
+              {busy ? 'Import en cours…' : `Importer ${importPreview.summary.valid} article${importPreview.summary.valid > 1 ? 's' : ''}`}
             </button>
           )}
           {drawer && drawer !== 'order' && drawer !== 'import' && <button className="btn btn-primary" onClick={save} style={{ height: 48 }}>{drawer === 'product' && !editId ? 'Ajouter au catalogue' : 'Enregistrer'}</button>}

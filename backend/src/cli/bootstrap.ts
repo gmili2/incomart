@@ -2,7 +2,7 @@
  * Premier démarrage en production (et à chaque déploiement : le script ne crée que ce qui manque).
  *
  *   node dist/cli/bootstrap.js                 → compte admin, catégories, livraison
- *   node dist/cli/bootstrap.js --with-catalog  → + montres de départ si le catalogue est vide
+ *   node dist/cli/bootstrap.js --with-catalog  → + articles de départ si le catalogue est vide
  *
  * Ne supprime ni ne modifie jamais de données existantes (contrairement à `npm run db:seed`).
  * Le mot de passe d'un admin existant n'est jamais changé.
@@ -32,7 +32,7 @@ async function main() {
       admin = await prisma.user.create({
         data: {
           email, passwordHash: await hashPassword(password),
-          firstName: 'Admin', lastName: 'GMBIJOUX', role: 'ADMIN', emailVerifiedAt: new Date(),
+          firstName: 'Admin', lastName: 'INCOMART', role: 'ADMIN', emailVerifiedAt: new Date(),
         },
       });
       console.log(`Admin créé : ${email}`);
@@ -43,8 +43,8 @@ async function main() {
 
     if (withCatalog) {
       const count = await prisma.product.count();
-      if (count) console.log(`Catalogue déjà rempli (${count} montres) : rien à importer`);
-      else console.log(`Montres importées : ${Object.keys(await installCatalog(prisma, admin.id, refs)).length}`);
+      if (count) console.log(`Catalogue déjà rempli (${count} articles) : rien à importer`);
+      else console.log(`Articles importés : ${Object.keys(await installCatalog(prisma, admin.id, refs)).length}`);
     }
   } finally {
     await prisma.$disconnect();

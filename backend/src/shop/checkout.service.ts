@@ -124,7 +124,7 @@ export class CheckoutService {
    */
   private async compute(db: Db, dto: QuoteDto, userId: string | null) {
     const lock = userId !== null;
-    // Regroupe les doublons (même montre, même déclinaison).
+    // Regroupe les doublons (même article, même déclinaison).
     const wanted = new Map<string, { slug: string; variantId: string | null; quantity: number }>();
     for (const it of dto.items) {
       const k = `${it.slug}:${it.variantId ?? ''}`;
@@ -148,8 +148,8 @@ export class CheckoutService {
     for (const w of wanted.values()) {
       const p = products.find((x) => x.slug === w.slug);
       if (!p) { problems.push({ slug: w.slug, variantId: w.variantId, reason: 'UNAVAILABLE' }); continue; }
-      // Montre présentée en vitrine : jamais commandable, quel que soit son stock.
-      // En accès privé (boutique réservée), toutes les montres sont commandables.
+      // Article présenté en vitrine : jamais commandable, quel que soit son stock.
+      // En accès privé (boutique réservée), tous les articles sont commandables.
       if (!p.purchasable && !this.access.enabled) { problems.push({ slug: w.slug, variantId: w.variantId, reason: 'NOT_FOR_SALE' }); continue; }
       // Stock relu après verrouillage.
       const fresh = lock ? await db.product.findUniqueOrThrow({ where: { id: p.id }, select: { stock: true } }) : p;
@@ -171,10 +171,10 @@ export class CheckoutService {
       const out = problems.find((x) => x.reason === 'OUT_OF_STOCK');
       const showcase = problems.find((x) => x.reason === 'NOT_FOR_SALE');
       throw err(HttpStatus.CONFLICT, 'CART_INVALID', showcase
-        ? 'Une montre de votre panier n’est pas disponible à la vente'
+        ? 'Un article de votre panier n’est pas disponible à la vente'
         : out
-        ? 'Une montre de votre panier n’est plus disponible en quantité suffisante'
-        : 'Une montre de votre panier n’est plus disponible', problems);
+        ? 'Un article de votre panier n’est plus disponible en quantité suffisante'
+        : 'Un article de votre panier n’est plus disponible', problems);
     }
     const subtotal = lines.reduce((n, l) => n + l.totalCents, 0);
 
@@ -203,7 +203,7 @@ export class CheckoutService {
       coupon = { id: c.id, code: c.code };
     }
 
-    // Remise par quantité (paliers propres à une montre, sinon généraux), non cumulable avec le code :
+    // Remise par quantité (paliers propres à un article, sinon généraux), non cumulable avec le code :
     // la plus avantageuse pour le client l'emporte.
     const ids = [...new Set(lines.map((l) => l.productId))];
     const [globalTiers, own] = await Promise.all([
@@ -245,7 +245,7 @@ export class CheckoutService {
       discountLabel: r.discountLabel,
       // Code saisi mais non appliqué : la remise par quantité est plus avantageuse.
       couponSkipped: r.couponSkipped,
-      // Prochain palier : « Ajoutez 1 montre et économisez 60 DH ».
+      // Prochain palier : « Ajoutez 1 article et économisez 60 DH ».
       nextTier: r.nextTier,
     };
   }

@@ -14,24 +14,23 @@ import { VISIBLE } from './visibility';
 /**
  * Référencement. Le site est une application React : sans aide, robots et aperçus de partage (WhatsApp,
  * Facebook, Instagram) ne voient que l'index.html générique. Le serveur web confie donc à l'API
- * /montre/…, /montres…, /sitemap.xml et /robots.txt (voir main.ts) : elle renvoie l'index.html du site
+ * /produit/…, /produits…, /sitemap.xml et /robots.txt (voir main.ts) : elle renvoie l'index.html du site
  * complété du titre, de la description, de la photo, du prix et des données structurées de la page.
  */
 
-const SHOP = 'GMBIJOUX';
-const PITCH = 'Livraison gratuite partout au Maroc, paiement à la livraison.';
+const SHOP = 'INCOMART';
+const PITCH = 'Livraison partout au Maroc, paiement à la livraison.';
 
 /** Pages de la boutique (mêmes adresses que src/routes.ts du site). */
 const SHOP_PAGES: Record<string, { title: string; description: string }> = {
-  '': { title: 'Toutes les montres', description: `Toutes nos montres homme et femme : automatiques, classiques, sport, en coffret. Boutique à Casablanca. ${PITCH}` },
-  homme: { title: 'Montres homme', description: `Montres homme au Maroc : automatiques, classiques, sport, chronographes. Boutique à Casablanca. ${PITCH}` },
-  femme: { title: 'Montres femme', description: `Montres femme au Maroc : élégantes, dorées, argentées, en coffret cadeau. Boutique à Casablanca. ${PITCH}` },
-  automatiques: { title: 'Montres automatiques', description: `Montres automatiques au Maroc, mouvement mécanique visible ou non. Boutique à Casablanca. ${PITCH}` },
-  classiques: { title: 'Montres classiques', description: `Montres classiques et habillées au Maroc. Boutique à Casablanca. ${PITCH}` },
-  sport: { title: 'Montres sport', description: `Montres sport robustes et étanches au Maroc. Boutique à Casablanca. ${PITCH}` },
-  'avec-coffret': { title: 'Montres avec coffret', description: `Montres livrées dans leur coffret, idéales pour offrir. Boutique à Casablanca. ${PITCH}` },
-  'boite-simple': { title: 'Montres en boîte simple', description: `Montres en boîte simple, au meilleur prix. Boutique à Casablanca. ${PITCH}` },
-  nouveautes: { title: 'Nouveautés', description: `Les dernières montres arrivées à la boutique. ${PITCH}` },
+  '': { title: 'Toute la boutique', description: `Boutique de basket au Maroc : maillots, shorts, sweats, baskets et accessoires. ${PITCH}` },
+  maillots: { title: 'Maillots de basket', description: `Maillots de basket au Maroc : débardeurs, réversibles et maillots personnalisés. ${PITCH}` },
+  shorts: { title: 'Shorts de basket', description: `Shorts de basket au Maroc : mesh respirant, longueur genou, style rétro. ${PITCH}` },
+  sweats: { title: 'Sweats et hoodies', description: `Hoodies et warm-ups de basket au Maroc. ${PITCH}` },
+  baskets: { title: 'Baskets de basket', description: `Baskets de basket au Maroc : high-top et low-top. ${PITCH}` },
+  accessoires: { title: 'Accessoires de basket', description: `Ballons, sacs et chaussettes de basket au Maroc. ${PITCH}` },
+  nouveautes: { title: 'Nouveautés', description: `Les derniers articles arrivés à la boutique. ${PITCH}` },
+  promos: { title: 'Promos', description: `Les promotions du moment sur nos articles de basket. ${PITCH}` },
 };
 const STATIC_PAGES = ['/a-propos', '/contact', '/faq', '/cgv', '/confidentialite'];
 
@@ -52,7 +51,7 @@ export class SeoController {
   constructor(private prisma: PrismaService, private pricing: PricingService, private access: SiteAccess, private config: ConfigService) {}
 
   private get origin() {
-    return (this.config.get<string[]>('FRONTEND_URL') ?? [])[0]?.replace(/\/$/, '') || 'https://gmbijoux.store';
+    return (this.config.get<string[]>('FRONTEND_URL') ?? [])[0]?.replace(/\/$/, '') || 'https://incomart.store';
   }
   private abs(url: string) {
     // Photos de l'admin : adresse servie directement par le serveur web (voir src/catalog.tsx du site).
@@ -107,12 +106,12 @@ export class SeoController {
     // Boutique privée : rien à montrer aux robots.
     if (this.access.enabled) return send({ title: SHOP, description: SHOP, path, noindex: true });
 
-    const shop = path.match(/^\/montres(?:\/([a-z0-9-]+))?$/);
+    const shop = path.match(/^\/produits(?:\/([a-z0-9-]+))?$/);
     if (shop) {
       const page = SHOP_PAGES[shop[1] ?? ''];
       if (page) return send({ title: `${page.title} — ${SHOP}`, description: page.description, path });
     }
-    const one = path.match(/^\/montre\/([a-z0-9-]+)$/);
+    const one = path.match(/^\/produit\/([a-z0-9-]+)$/);
     const p = one && await this.prisma.product.findFirst({
       where: { slug: one[1], ...VISIBLE },
       include: { brand: { select: { name: true } }, category: { select: { name: true } }, images: { orderBy: [{ isPrimary: 'desc' }, { position: 'asc' }], select: { url: true } }, ...variantInclude },
@@ -127,7 +126,7 @@ export class SeoController {
     const inStock = p.unlimitedStock || p.stock > 0;
     const images = p.images.map((i) => this.abs(i.url));
     const colors = [...new Set(variants.flatMap((v) => v.values.map((x) => x.optionValue.label)))];
-    const pageUrl = `${this.origin}/montre/${p.slug}`;
+    const pageUrl = `${this.origin}/produit/${p.slug}`;
     const text = (p.shortDescription ? p.shortDescription + '. ' : '') + p.description;
     const description = clip(`${p.name} à ${fmtDh(low)}${low !== high ? ' et plus' : ''}. ${text} ${PITCH}`.replace(/\s+/g, ' '), 300);
     const availability = `https://schema.org/${inStock ? 'InStock' : 'OutOfStock'}`;
@@ -154,14 +153,14 @@ export class SeoController {
     const crumbs = {
       '@context': 'https://schema.org', '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Montres', item: `${this.origin}/montres` },
+        { '@type': 'ListItem', position: 1, name: 'Boutique', item: `${this.origin}/produits` },
         { '@type': 'ListItem', position: 2, name: p.name, item: pageUrl },
       ],
     };
     const body = `<main><h1>${esc(p.name)}</h1>${images[0] ? `<img src="${esc(images[0])}" alt="${esc(p.name)}" width="400" />` : ''}`
       + `<p>${esc(fmtDh(low))}${low !== high ? ' et plus' : ''} · ${inStock ? 'En stock' : 'Épuisé'}</p><p>${esc(text)}</p>`
-      + `${colors.length ? `<p>Coloris : ${esc(colors.join(', '))}</p>` : ''}<p>${esc(PITCH)}</p><p><a href="/montres">Toutes les montres</a></p></main>`;
-    return send({ title: `${p.name} — ${fmtDh(low)} — ${SHOP}`, description, path: `/montre/${p.slug}`, image: images[0], type: 'product', jsonLd: [product, crumbs], body });
+      + `${colors.length ? `<p>Couleurs et tailles : ${esc(colors.join(', '))}</p>` : ''}<p>${esc(PITCH)}</p><p><a href="/produits">Toute la boutique</a></p></main>`;
+    return send({ title: `${p.name} — ${fmtDh(low)} — ${SHOP}`, description, path: `/produit/${p.slug}`, image: images[0], type: 'product', jsonLd: [product, crumbs], body });
   }
 
   @Get('sitemap.xml')
@@ -175,9 +174,9 @@ export class SeoController {
     const url = (loc: string, extra = '') => `  <url><loc>${esc(this.origin + loc)}</loc>${extra}</url>`;
     const lines = this.access.enabled ? [] : [
       url('/'),
-      ...Object.keys(SHOP_PAGES).map((k) => url(k ? `/montres/${k}` : '/montres')),
+      ...Object.keys(SHOP_PAGES).map((k) => url(k ? `/produits/${k}` : '/produits')),
       ...STATIC_PAGES.map((p) => url(p)),
-      ...products.map((p) => url(`/montre/${p.slug}`,
+      ...products.map((p) => url(`/produit/${p.slug}`,
         `<lastmod>${p.updatedAt.toISOString().slice(0, 10)}</lastmod>`
         + (p.images[0] ? `<image:image><image:loc>${esc(this.abs(p.images[0].url))}</image:loc><image:title>${esc(p.name)}</image:title></image:image>` : ''))),
     ];
@@ -195,7 +194,7 @@ export class SeoController {
       'Disallow: /panier',
       'Disallow: /commande',
       'Disallow: /compte',
-      // /api reste ouvert : Google en a besoin pour afficher les listes de montres en exécutant le site.
+      // /api reste ouvert : Google en a besoin pour afficher les listes d’articles en exécutant le site.
       '',
       `Sitemap: ${this.origin}/sitemap.xml`,
       '',

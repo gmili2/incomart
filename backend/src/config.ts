@@ -11,13 +11,13 @@ const schema = z.object({
   BANK_NAME: z.string().optional(),
   BANK_RIB: z.string().optional(),
   UPLOAD_DIR: z.string().default('uploads'),
-  // index.html du site, complété par l'API pour les fiches montres (titre, description, aperçus de partage).
+  // index.html du site, complété par l'API pour les fiches produits (titre, description, aperçus de partage).
   SITE_INDEX_FILE: z.string().optional(),
   // Boutique en accès privé : si défini, il faut ce code pour voir le catalogue et commander.
   SITE_ACCESS_CODE: z.string().min(6, 'SITE_ACCESS_CODE : 6 caractères minimum').optional(),
   // E-mails de commande via Resend (facultatif : sans clé, rien n'est envoyé).
   RESEND_API_KEY: z.string().optional(),
-  MAIL_FROM: z.string().default('GMBIJOUX <onboarding@resend.dev>'),
+  MAIL_FROM: z.string().default('INCOMART <onboarding@resend.dev>'),
   // Adresse(s) de la boutique prévenue(s) à chaque commande, séparées par des virgules.
   ORDER_NOTIFY_EMAIL: z.string().optional(),
   // Pixel Meta (Facebook) des campagnes publicitaires : identifiant numérique, facultatif.

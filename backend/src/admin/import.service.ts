@@ -6,7 +6,7 @@ import { UploadsService } from '../common/uploads.service';
 import { PrismaService } from '../prisma.service';
 
 /*
- * Import de catalogue fournisseur (CSV). Une ligne = une montre.
+ * Import de catalogue fournisseur (CSV). Une ligne = un article.
  * Colonnes reconnues (en-têtes insensibles à la casse et aux accents, séparateur « ; », « , » ou tabulation) :
  *   nom*, prix*, prix_barre, prix_promo, stock, sku, categorie, collection, marque, description,
  *   mouvement, couleur, couleurs, diametre, etancheite, verre, boitier, bracelet, genre, statut, images
@@ -114,7 +114,7 @@ export class ImportService {
     if (!file?.buffer?.length) throw new AppError(HttpStatus.BAD_REQUEST, 'FILE_REQUIRED', 'Aucun fichier reçu');
     const rows = parseCsv(decode(file.buffer));
     if (rows.length < 2) throw new AppError(HttpStatus.BAD_REQUEST, 'EMPTY_FILE', 'Le fichier ne contient aucune ligne de produit');
-    if (rows.length - 1 > MAX_IMPORT_ROWS) throw new AppError(HttpStatus.BAD_REQUEST, 'TOO_MANY_ROWS', `${MAX_IMPORT_ROWS} montres maximum par import`);
+    if (rows.length - 1 > MAX_IMPORT_ROWS) throw new AppError(HttpStatus.BAD_REQUEST, 'TOO_MANY_ROWS', `${MAX_IMPORT_ROWS} articles maximum par import`);
 
     const header = rows[0].map(key);
     const col: Record<string, number> = {};
@@ -172,8 +172,8 @@ export class ImportService {
       const statut = norm(get(r, 'statut'));
 
       const row: ImportRow = {
-        line, name, sku, priceCents, salePriceCents, stock, category: get(r, 'categorie') || 'Montres Homme',
-        collection: get(r, 'collection') || null, brand: get(r, 'marque') || 'GMBIJOUX', description: get(r, 'description').slice(0, 5000),
+        line, name, sku, priceCents, salePriceCents, stock, category: get(r, 'categorie') || 'Maillots',
+        collection: get(r, 'collection') || null, brand: get(r, 'marque') || 'INCOMART', description: get(r, 'description').slice(0, 5000),
         movementType, color: get(r, 'couleur') || colors[0] || 'Noir', colors,
         diameterMm: diameter && diameter >= 10 && diameter < 100 ? Math.round(diameter * 10) / 10 : 40,
         waterResistanceM: water && water >= 0 && water <= 20_000 ? Math.round(water) : 30,
@@ -189,7 +189,7 @@ export class ImportService {
     };
   }
 
-  /** Crée les montres valides (une transaction par montre : une erreur n'annule pas les autres). */
+  /** Crée les articles valides (une transaction par article : une erreur n'annule pas les autres). */
   async run(file: Express.Multer.File | undefined, actorId: string) {
     const { reports } = this.analyse(file);
     const results: { line: number; name: string; status: 'created' | 'skipped' | 'error'; message?: string; images?: number; slug?: string }[] = [];
@@ -203,9 +203,9 @@ export class ImportService {
           results.push({ line: r.line, name: r.name, status: 'skipped', message: `SKU ${r.sku} déjà présent au catalogue` });
           continue;
         }
-        // Sans SKU : une montre du même nom (insensible à la casse) est considérée comme déjà importée.
+        // Sans SKU : un article du même nom (insensible à la casse) est considérée comme déjà importée.
         if (!r.sku && await this.prisma.product.findFirst({ where: { name: r.name }, select: { id: true } })) {
-          results.push({ line: r.line, name: r.name, status: 'skipped', message: 'une montre du même nom existe déjà' });
+          results.push({ line: r.line, name: r.name, status: 'skipped', message: 'un article du même nom existe déjà' });
           continue;
         }
         const [brandId, categoryId, collectionId] = await Promise.all([
@@ -214,7 +214,7 @@ export class ImportService {
           r.collection ? this.findOrCreate('collection', r.collection) : Promise.resolve(null),
         ]);
         const sku = r.sku ?? await this.freeSku(`IMP-${code(r.name)}`);
-        const slug = await this.freeSlug(slugify(r.name) || 'montre');
+        const slug = await this.freeSlug(slugify(r.name) || 'article');
 
         const product = await this.prisma.$transaction(async (tx) => {
           const p = await tx.product.create({

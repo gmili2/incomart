@@ -7,39 +7,38 @@ import { PATHS, productPath, shopPath } from '../routes';
 import { useStore } from '../store';
 import { ArrowIcon, BagIcon, CloseIcon, MenuIcon, SearchIcon, UserIcon } from './icons';
 
-const NAV: { label: string; to: string; match: (path: string) => boolean }[] = [
-  { label: 'Accueil', to: '/', match: (p) => p === '/' },
-  { label: 'Montres', to: shopPath('all'), match: (p) => p.startsWith('/montres') && !p.endsWith('/nouveautes') },
-  { label: 'Nouveautés', to: shopPath('new'), match: (p) => p === '/montres/nouveautes' },
-  { label: 'Collections', to: PATHS.collections, match: (p) => p === PATHS.collections },
-  { label: 'À propos', to: PATHS.about, match: (p) => p === PATHS.about },
-  { label: 'Contact', to: PATHS.contact, match: (p) => p === PATHS.contact },
+const NAV: { label: string; to: string; match: (path: string) => boolean; hot?: boolean }[] = [
+  { label: 'Maillots', to: shopPath('maillots'), match: (p) => p === shopPath('maillots') },
+  { label: 'Shorts', to: shopPath('shorts'), match: (p) => p === shopPath('shorts') },
+  { label: 'Sweats', to: shopPath('sweats'), match: (p) => p === shopPath('sweats') },
+  { label: 'Baskets', to: shopPath('baskets'), match: (p) => p === shopPath('baskets') },
+  { label: 'Accessoires', to: shopPath('accessoires'), match: (p) => p === shopPath('accessoires') },
+  { label: 'Promos', to: shopPath('promo'), match: (p) => p === shopPath('promo'), hot: true },
 ];
 
-export function Logo({ size, light }: { size: number; light?: boolean }) {
+export function Logo({ size }: { size: number; light?: boolean }) {
   return (
-    <img
-      src="/logo.png"
-      alt="GMBIJOUX"
-      width={size}
-      height={size}
-      style={{
-        width: size,
-        height: size,
-        objectFit: 'contain',
-        mixBlendMode: light ? 'screen' : 'multiply',
-        filter: light ? 'invert(1)' : undefined,
-      }}
-    />
+    <img src="/logo.png" alt="INCOMART" width={size} height={size} style={{ width: size, height: size, objectFit: 'cover', borderRadius: '50%' }} />
+  );
+}
+
+/** Logo rond + nom « INCOMART HOOPS » de la maquette. */
+function Brand({ size, hoops = true }: { size: number; hoops?: boolean }) {
+  return (
+    <Link to="/" aria-label="INCOMART — accueil" style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--ink)' }}>
+      <Logo size={size} />
+      <span style={{ fontFamily: 'var(--display-font)', fontSize: size > 60 ? 28 : 24, fontWeight: 800, letterSpacing: '.04em', whiteSpace: 'nowrap' }}>
+        INCO<span style={{ color: 'var(--accent)' }}>MART</span>
+        {hoops && <span style={{ fontSize: 16, color: 'var(--graphite)', fontWeight: 600, letterSpacing: '.2em', marginLeft: 8 }}>HOOPS</span>}
+      </span>
+    </Link>
   );
 }
 
 export function TopBar() {
-  const L = useLayout();
   return (
-    <div style={{ background: '#111', color: '#fff', padding: '10px 20px', display: 'flex', justifyContent: 'center', gap: 24, fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase' }}>
-      <span>Livraison incluse</span>
-      {L.desktop && (<><span>Garantie 2 ans</span><span>Retours 30 jours</span><span>Paiement à la livraison</span></>)}
+    <div style={{ background: 'var(--accent)', color: '#0A0A0A', textAlign: 'center', fontSize: 13, fontWeight: 600, letterSpacing: '.04em', padding: '10px 16px' }}>
+      Livraison partout au Maroc · Paiement à la livraison
     </div>
   );
 }
@@ -48,7 +47,7 @@ function CartButton() {
   const { count, openDrawer } = useStore();
   return (
     <button className="icon-btn" onClick={openDrawer} aria-label={`Panier, ${count} article${count > 1 ? 's' : ''}`}>
-      <BagIcon />
+      <BagIcon size={22} />
       {count > 0 && <span className="badge-count">{count}</span>}
     </button>
   );
@@ -60,19 +59,17 @@ export function Header() {
   const { openSearch, openMenu } = useStore();
   const wrap: React.CSSProperties = {
     position: 'sticky', top: 0, zIndex: 40,
-    background: 'rgba(247,247,245,.88)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+    background: 'rgba(10,10,10,.92)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
     borderBottom: '1px solid var(--line)',
   };
   if (L.mobile) {
     return (
       <header style={wrap}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', height: 64, padding: '0 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 68, padding: '0 8px' }}>
+          <button className="icon-btn" onClick={openMenu} aria-label="Menu"><MenuIcon size={22} /></button>
+          <Brand size={44} hoops={false} />
           <div style={{ display: 'flex' }}>
-            <button className="icon-btn" onClick={openMenu} aria-label="Menu"><MenuIcon /></button>
-          </div>
-          <Link to="/" aria-label="GMBIJOUX — accueil" style={{ display: 'flex' }}><Logo size={46} /></Link>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="icon-btn" onClick={openSearch} aria-label="Rechercher"><SearchIcon /></button>
+            <button className="icon-btn" onClick={openSearch} aria-label="Rechercher"><SearchIcon size={22} /></button>
             <CartButton />
           </div>
         </div>
@@ -81,28 +78,16 @@ export function Header() {
   }
   return (
     <header style={wrap}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 32, height: 84, padding: `0 ${L.px}` }}>
-        <nav style={{ display: 'flex', gap: 28, whiteSpace: 'nowrap' }} aria-label="Navigation principale">
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <Brand size={64} />
+        <nav aria-label="Catégories" style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {NAV.map((n) => (
-            <Link
-              key={n.label}
-              to={n.to}
-              style={{
-                borderBottom: `1px solid ${n.match(pathname) ? '#111' : 'transparent'}`,
-                padding: '6px 0', fontSize: 11.5, fontWeight: 500, letterSpacing: '.16em', textTransform: 'uppercase',
-                color: '#111', transition: 'border-color .4s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderBottomColor = '#111')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderBottomColor = n.match(pathname) ? '#111' : 'transparent')}
-            >
-              {n.label}
-            </Link>
+            <Link key={n.label} to={n.to} className={`nav-link${n.match(pathname) ? ' on' : ''}`} style={n.hot ? { color: 'var(--accent)', fontWeight: 700 } : undefined}>{n.label}</Link>
           ))}
         </nav>
-        <Link to="/" aria-label="GMBIJOUX — accueil" style={{ display: 'flex' }}><Logo size={62} /></Link>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4 }}>
-          <button className="icon-btn" onClick={openSearch} aria-label="Rechercher"><SearchIcon /></button>
-          <Link className="icon-btn" to={PATHS.account} aria-label="Mon compte"><UserIcon /></Link>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="icon-btn" onClick={openSearch} aria-label="Rechercher"><SearchIcon size={22} /></button>
+          <Link className="icon-btn" to={PATHS.account} aria-label="Mon compte"><UserIcon size={22} /></Link>
           <CartButton />
         </div>
       </div>
@@ -111,9 +96,9 @@ export function Header() {
 }
 
 const FOOTER = [
-  { t: 'Boutique', links: [['Toutes les montres', shopPath('all')], ['Nouveautés', shopPath('new')], ['Collections', PATHS.collections], ['Panier', PATHS.cart]] },
-  { t: 'Maison', links: [['À propos', PATHS.about], ['Contact', PATHS.contact], ['FAQ', PATHS.faq], ['Mon compte', PATHS.account]] },
-  { t: 'Légal', links: [['Conditions générales', PATHS.cgv], ['Confidentialité', PATHS.privacy], ['Charte graphique', PATHS.charte]] },
+  { t: 'Boutique', links: [['Maillots', shopPath('maillots')], ['Shorts', shopPath('shorts')], ['Baskets', shopPath('baskets')], ['Accessoires', shopPath('accessoires')]] },
+  { t: 'Aide', links: [['Livraison & retours', PATHS.faq], ['Guide des tailles', PATHS.faq], ['Contact', PATHS.contact], ['Mon compte', PATHS.account]] },
+  { t: 'Infos', links: [['À propos', PATHS.about], ['Conditions générales', PATHS.cgv], ['Confidentialité', PATHS.privacy]] },
 ];
 
 export function Footer() {
@@ -121,48 +106,50 @@ export function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   return (
-    <footer style={{ background: '#111', color: '#fff', padding: `${L.sec} ${L.px} 28px`, display: 'flex', flexDirection: 'column', gap: 56 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: L.footCols, gap: 40 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, gridColumn: L.footSpan }}>
-          <Logo size={76} light />
-          <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, color: '#B5B5AF', maxWidth: 320 }}>
-            {subscribed ? 'Merci, vous êtes inscrit·e à la newsletter.' : 'Recevez les nouveautés en avant-première, une fois par mois.'}
+    <>
+      <section style={{ maxWidth: 1280, margin: '0 auto', padding: L.mobile ? '56px 20px' : '72px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 24, borderTop: '1px solid var(--line)' }}>
+        <div style={{ flex: '1 1 380px', minWidth: 0 }}>
+          <h2 className="display" style={{ margin: '0 0 8px', fontSize: 40, textTransform: 'uppercase' }}>Rejoins le crew</h2>
+          <p style={{ margin: 0, fontSize: 16, color: 'var(--graphite)' }}>
+            {subscribed ? 'Bienvenue dans le crew ! Tu recevras nos prochains drops en avant-première.' : 'Drops en avant-première et offres réservées aux abonnés.'}
           </p>
-          {!subscribed && (
-            <form
-              onSubmit={(e) => { e.preventDefault(); if (/^\S+@\S+\.\S+$/.test(email)) setSubscribed(true); }}
-              style={{ display: 'flex', maxWidth: 380, borderBottom: '1px solid rgba(255,255,255,.35)' }}
-            >
-              <input
-                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="Votre e-mail" aria-label="Votre e-mail"
-                style={{ flex: 1, minWidth: 0, height: 48, background: 'transparent', border: 0, color: '#fff', fontSize: 15, outline: 'none' }}
-              />
-              <button type="submit" style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer', fontSize: 11.5, fontWeight: 600, letterSpacing: '.16em', textTransform: 'uppercase' }}>S’inscrire</button>
-            </form>
-          )}
         </div>
-        {FOOTER.map((g) => (
-          <div key={g.t} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <span className="mono" style={{ fontSize: 10.5, color: '#8C8C86' }}>{g.t}</span>
-            {g.links.map(([label, to]) => (
-              <Link key={label} to={to} style={{ color: '#E0E0DC', fontSize: 14.5, padding: '2px 0' }}>{label}</Link>
-            ))}
+        {!subscribed && (
+          <form onSubmit={(e) => { e.preventDefault(); if (/^\S+@\S+\.\S+$/.test(email)) setSubscribed(true); }} style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            <input
+              type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ton@email.com" aria-label="Adresse e-mail"
+              style={{ flex: '1 1 240px', minWidth: 0, height: 52, padding: '0 20px', borderRadius: 999, border: '1px solid var(--line-strong)', background: '#161616', color: 'var(--ink)', fontSize: 16, outline: 'none' }}
+            />
+            <button type="submit" className="btn btn-primary" style={{ height: 52, padding: '0 28px' }}>S’inscrire</button>
+          </form>
+        )}
+      </section>
+      <footer style={{ borderTop: '1px solid var(--line)', background: '#050505' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '56px 24px 32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 32 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Logo size={120} />
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--graphite)' }}>Style · Qualité · Confort</p>
           </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, paddingTop: 24, borderTop: '1px solid #2A2A2A', fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.12em', textTransform: 'uppercase', color: '#8C8C86' }}>
-        <span>© 2026 GMBIJOUX — Tous droits réservés</span>
-        <span style={{ display: 'flex', gap: 20 }}><span>Paiement à la livraison · Virement bancaire</span><Link to={PATHS.admin} style={{ color: '#8C8C86' }}>Administration</Link></span>
-      </div>
-    </footer>
+          {FOOTER.map((g) => (
+            <div key={g.t} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <h3 style={{ margin: '0 0 6px', fontSize: 14, letterSpacing: '.16em', color: 'var(--graphite)', textTransform: 'uppercase' }}>{g.t}</h3>
+              {g.links.map(([label, to]) => <Link key={label} to={to} style={{ fontSize: 15 }}>{label}</Link>)}
+            </div>
+          ))}
+        </div>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: 24, borderTop: '1px solid #1F1F1F', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, fontSize: 13, color: '#8A8A8A' }}>
+          <span>© 2026 Incomart. Tous droits réservés.</span>
+          <span style={{ display: 'flex', gap: 20 }}><span>Paiement à la livraison · Virement bancaire</span><Link to={PATHS.admin} style={{ color: '#8A8A8A' }}>Administration</Link></span>
+        </div>
+      </footer>
+    </>
   );
 }
 
 function QtyStepper({ qty, onDec, onInc, h = 36 }: { qty: number; onDec: () => void; onInc: () => void; h?: number }) {
   const b: React.CSSProperties = { width: h - 2, height: h - 2, border: 0, background: 'none', cursor: 'pointer', fontSize: 16 };
   return (
-    <div style={{ display: 'flex', alignItems: 'center', height: h, border: '1px solid var(--line-strong)', borderRadius: 999, background: '#fff' }}>
+    <div style={{ display: 'flex', alignItems: 'center', height: h, border: '1px solid var(--line-strong)', borderRadius: 999, background: 'var(--paper)' }}>
       <button style={b} onClick={onDec} aria-label="Diminuer la quantité">−</button>
       <span style={{ minWidth: 16, textAlign: 'center', fontSize: 13.5 }}>{qty}</span>
       <button style={b} onClick={onInc} aria-label="Augmenter la quantité">+</button>
@@ -196,16 +183,16 @@ export function Overlays() {
     <>
       <div
         onClick={s.closeAll}
-        style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(17,17,17,.38)', opacity: anyOverlay ? 1 : 0, pointerEvents: anyOverlay ? 'auto' : 'none', transition: 'opacity .5s ease' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,.6)', opacity: anyOverlay ? 1 : 0, pointerEvents: anyOverlay ? 'auto' : 'none', transition: 'opacity .5s ease' }}
       />
 
       {/* Panier latéral */}
       <aside
         aria-label="Panier" aria-hidden={!s.drawer}
-        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 70, width: 'min(440px,100vw)', background: 'var(--ivory)', display: 'flex', flexDirection: 'column', transform: s.drawer ? 'translateX(0)' : 'translateX(105%)', transition: 'transform .6s var(--ease)', boxShadow: '-20px 0 60px rgba(0,0,0,.08)', visibility: s.drawer ? 'visible' : 'hidden', transitionProperty: 'transform, visibility' }}
+        style={{ position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 70, width: 'min(440px,100vw)', background: 'var(--ivory)', display: 'flex', flexDirection: 'column', transform: s.drawer ? 'translateX(0)' : 'translateX(105%)', transition: 'transform .6s var(--ease)', boxShadow: '-20px 0 60px rgba(0,0,0,.5)', borderLeft: '1px solid var(--line)', visibility: s.drawer ? 'visible' : 'hidden', transitionProperty: 'transform, visibility' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--line)' }}>
-          <span style={{ fontStretch: '125%', fontWeight: 600, textTransform: 'uppercase', fontSize: 15 }}>Panier · {s.count}</span>
+          <span className="display" style={{ textTransform: 'uppercase', fontSize: 26 }}>Panier · {s.count}</span>
           <button className="icon-btn" onClick={s.closeAll} aria-label="Fermer"><CloseIcon /></button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px' }}>
@@ -217,7 +204,7 @@ export function Overlays() {
                 <button className="ph" onClick={() => go(productPath(p.id))} aria-label={p.name} style={{ aspectRatio: '1', border: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   {l.image
                     ? <img src={l.image} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <span style={{ width: '52%', aspectRatio: '1', borderRadius: '50%', border: '1px solid rgba(17,17,17,.17)' }} />}
+                    : <span style={{ width: '52%', aspectRatio: '1', borderRadius: '50%', border: '1px solid rgba(245,245,245,.17)' }} />}
                 </button>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -236,13 +223,13 @@ export function Overlays() {
             );
           })}
         </div>
-        <div style={{ padding: '20px 24px 24px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12, background: '#fff' }}>
+        <div style={{ padding: '20px 24px 24px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12, background: 'var(--paper)' }}>
           {s.qtyDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}><span>{s.qtyLabel}</span><span>−{fmt(s.qtyDiscount)}</span></div>}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={{ fontSize: 14 }}>{s.qtyDiscount > 0 ? 'Total' : 'Sous-total'} · livraison incluse</span>
             <span style={{ fontStretch: '110%', fontSize: 20, fontWeight: 500 }}>{fmt(s.subtotal - s.qtyDiscount)}</span>
           </div>
-          {s.nextTier && <span style={{ fontSize: 13, padding: '10px 12px', background: '#F2F2EF', lineHeight: 1.4 }}>Ajoutez {s.nextTier.missing} {s.nextTier.productName ?? `montre${s.nextTier.missing > 1 ? 's' : ''}`} et économisez <strong>{fmt(s.nextTier.amount)}</strong> sur votre commande.</span>}
+          {s.nextTier && <span style={{ fontSize: 13, padding: '10px 12px', background: '#1F1F1F', lineHeight: 1.4 }}>Ajoutez {s.nextTier.missing} {s.nextTier.productName ?? `article${s.nextTier.missing > 1 ? 's' : ''}`} et économisez <strong>{fmt(s.nextTier.amount)}</strong> sur votre commande.</span>}
           <button className="btn btn-primary" disabled={s.count === 0} onClick={() => go(PATHS.checkout)} style={{ opacity: s.count === 0 ? 0.4 : 1 }}>Commander</button>
           <button className="btn btn-outline" style={{ height: 50 }} onClick={() => go(PATHS.cart)}>Voir le panier</button>
         </div>
@@ -251,15 +238,15 @@ export function Overlays() {
       {/* Menu mobile */}
       <div
         aria-hidden={!s.menu}
-        style={{ position: 'fixed', inset: 0, zIndex: 80, background: '#111', color: '#fff', display: 'flex', flexDirection: 'column', padding: '12px 20px 32px', opacity: s.menu ? 1 : 0, pointerEvents: s.menu ? 'auto' : 'none', transition: 'opacity .45s ease', visibility: s.menu ? 'visible' : 'hidden' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 80, background: '#0A0A0A', color: '#F5F5F5', display: 'flex', flexDirection: 'column', padding: '12px 20px 32px', opacity: s.menu ? 1 : 0, pointerEvents: s.menu ? 'auto' : 'none', transition: 'opacity .45s ease', visibility: s.menu ? 'visible' : 'hidden' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 52 }}>
-          <Logo size={44} light />
+          <Logo size={44} />
           <button className="icon-btn" onClick={s.closeAll} aria-label="Fermer" style={{ background: 'transparent' }}><CloseIcon color="#fff" size={20} /></button>
         </div>
         <nav style={{ display: 'flex', flexDirection: 'column', marginTop: 36 }}>
           {NAV.map((n) => (
-            <button key={n.label} onClick={() => go(n.to)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', background: 'none', border: 0, borderBottom: '1px solid #2A2A2A', color: '#fff', cursor: 'pointer', fontStretch: '125%', fontWeight: 500, textTransform: 'uppercase', fontSize: 24, textAlign: 'left' }}>
+            <button key={n.label} onClick={() => go(n.to)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', background: 'none', border: 0, borderBottom: '1px solid #2A2A2A', color: '#F5F5F5', cursor: 'pointer', fontFamily: 'var(--display-font)', fontWeight: 800, textTransform: 'uppercase', fontSize: 30, textAlign: 'left' }}>
               {n.label}<ArrowIcon color="#fff" />
             </button>
           ))}
@@ -275,18 +262,18 @@ export function Overlays() {
         role="search" aria-hidden={!s.search}
         style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 75, background: 'var(--ivory)', borderBottom: '1px solid var(--line)', padding: `20px ${L.px} 28px`, transform: s.search ? 'translateY(0)' : 'translateY(-105%)', transition: 'transform .55s var(--ease)', visibility: s.search ? 'visible' : 'hidden', transitionProperty: 'transform, visibility' }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid #111', paddingBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--ink)', paddingBottom: 10 }}>
           <SearchIcon size={22} />
           <input
             ref={searchRef} value={q} onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) go(productPath(results[0].id)); }}
-            placeholder="Rechercher une montre, une collection…" aria-label="Rechercher"
-            style={{ flex: 1, minWidth: 0, height: 48, border: 0, background: 'transparent', fontSize: L.searchFs, fontStretch: '110%', outline: 'none', color: '#111' }}
+            placeholder="Rechercher un maillot, un short, une basket…" aria-label="Rechercher"
+            style={{ flex: 1, minWidth: 0, height: 48, border: 0, background: 'transparent', fontSize: L.searchFs, fontStretch: '110%', outline: 'none', color: 'var(--ink)' }}
           />
           <button className="icon-btn" onClick={s.closeAll} aria-label="Fermer"><CloseIcon /></button>
         </div>
         <span className="mono" style={{ display: 'block', marginTop: 18, fontSize: 10.5, letterSpacing: '.14em' }}>
-          {query ? `${results.length} résultat${results.length > 1 ? 's' : ''}` : 'Les plus recherchées'}
+          {query ? `${results.length} résultat${results.length > 1 ? 's' : ''}` : 'Les plus recherchés'}
         </span>
         <div style={{ display: 'flex', flexDirection: 'column', marginTop: 8 }}>
           {results.map((p) => (

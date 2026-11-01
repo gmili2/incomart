@@ -86,7 +86,7 @@ export class UploadsService {
     if (u.protocol !== 'https:') throw new Error('seules les adresses https sont acceptées');
     const { address } = await lookup(u.hostname);
     if (isPrivateAddress(address)) throw new Error('adresse interne refusée');
-    const res = await fetch(u, { redirect: 'error', signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'GMBIJOUX-import/1.0' } });
+    const res = await fetch(u, { redirect: 'error', signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'INCOMART-import/1.0' } });
     if (!res.ok || !res.body) throw new Error(`réponse ${res.status}`);
     const chunks: Buffer[] = [];
     let size = 0;
@@ -99,7 +99,7 @@ export class UploadsService {
   }
 
   /**
-   * Copie un fichier envoyé ici sous un nouveau nom (duplication d'une montre : chaque montre garde ses propres
+   * Copie un fichier envoyé ici sous un nouveau nom (duplication d’un article : chaque article garde ses propres
    * fichiers, supprimer l'une n'efface pas les photos de l'autre). Les autres adresses sont renvoyées telles quelles.
    */
   async copyByUrl(url: string) {

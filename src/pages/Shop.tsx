@@ -22,7 +22,7 @@ export default function Shop() {
 
   const items = useMemo(() => {
     if (!cat) return [];
-    // L'API renvoie déjà les montres par popularité (ventes).
+    // L'API renvoie déjà les articles par popularité (ventes).
     const l = cat === 'all' ? products.slice() : products.filter((p) => p.cats.includes(cat));
     if (sort === 'asc') l.sort((a, b) => a.price - b.price);
     if (sort === 'desc') l.sort((a, b) => b.price - a.price);
@@ -43,7 +43,7 @@ export default function Shop() {
   return (
     <>
       <section data-reveal style={{ padding: `${L.pageTop} ${L.px} 28px`, display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <Crumbs items={[['Accueil', '/'], ['Montres', cat === 'all' ? undefined : shopPath('all')], ...(cat === 'all' ? [] : [[title] as [string]])]} />
+        <Crumbs items={[['Accueil', '/'], ['Boutique', cat === 'all' ? undefined : shopPath('all')], ...(cat === 'all' ? [] : [[title] as [string]])]} />
         <h1 className="display" style={{ lineHeight: 1, fontSize: L.h2 }}>{title}</h1>
         <p style={{ margin: 0, maxWidth: 520, color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>{sub}</p>
       </section>
@@ -52,7 +52,7 @@ export default function Shop() {
           <div className="hscroll" style={{ display: 'flex', gap: 6, maxWidth: '100%', paddingBottom: 2 }}>
             {(Object.keys(CATS) as CategoryId[]).filter((id) => !hidden(id)).map((id) => (
               <button key={id} className={`chip${cat === id ? ' active' : ''}`} onClick={() => navigate(shopPath(id))}>
-                {id === 'all' ? 'Toutes' : CATS[id][0].replace('Montres ', '')}
+                {id === 'all' ? 'Toutes' : CATS[id][0]}
               </button>
             ))}
           </div>
@@ -60,7 +60,7 @@ export default function Shop() {
             <span>{items.length > PER_PAGE ? `${(page - 1) * PER_PAGE + 1}–${Math.min(page * PER_PAGE, items.length)} sur ` : ''}{items.length} modèle{items.length > 1 ? 's' : ''}</span>
             <select
               value={sort} onChange={(e) => { setSort(e.target.value as Sort); setParams({}); }} aria-label="Trier par"
-              style={{ height: 40, padding: '0 14px', border: '1px solid var(--line-strong)', borderRadius: 999, background: '#fff', color: '#111', fontSize: 13, cursor: 'pointer' }}
+              style={{ height: 40, padding: '0 14px', border: '1px solid var(--line-strong)', borderRadius: 999, background: 'var(--paper)', color: 'var(--ink)', fontSize: 13, cursor: 'pointer' }}
             >
               <option value="pop">Popularité</option>
               <option value="new">Nouveautés</option>
@@ -69,8 +69,8 @@ export default function Shop() {
             </select>
           </div>
         </div>
-        {items.length || status !== 'ready' ? <ProductGrid items={shown} /> : <p>Aucun modèle dans cette catégorie pour le moment. <Link to={shopPath('all')}>Voir toutes les montres</Link></p>}
-        <Pagination page={page} pages={pages} onChange={goTo} label="Pages de montres" />
+        {items.length || status !== 'ready' ? <ProductGrid items={shown} /> : <p>Aucun modèle dans cette catégorie pour le moment. <Link to={shopPath('all')}>Voir toute la boutique.</Link></p>}
+        <Pagination page={page} pages={pages} onChange={goTo} label="Pages d’articles" />
       </section>
     </>
   );

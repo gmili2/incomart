@@ -41,7 +41,7 @@ export class CreateProductDto {
   @IsString() @MinLength(1) @MaxLength(60) strapMaterial: string;
   @IsString() @MinLength(1) @MaxLength(40) color: string;
   @IsOptional() @IsString() @MaxLength(40) dialColor?: string;
-  @IsNumber({ maxDecimalPlaces: 1 }) @Min(10) @Max(99) diameterMm: number;
+  @IsNumber({ maxDecimalPlaces: 1 }) @Min(0) @Max(99) diameterMm: number; // hérité du modèle montre, 0 pour les articles de basket
   @IsOptional() @IsNumber({ maxDecimalPlaces: 1 }) @Min(1) @Max(99) thicknessMm?: number | null;
   @IsOptional() @IsInt() @Min(4) @Max(40) lugWidthMm?: number | null;
   @IsInt() @Min(0) @Max(20_000) waterResistanceM: number;
@@ -130,7 +130,7 @@ export class AdminProductsController {
     return { data: this.importer.analyse(file) };
   }
 
-  /** Crée les montres valides du fichier (en brouillon sauf « statut = actif ») et télécharge leurs photos. */
+  /** Crée les articles valides du fichier (en brouillon sauf « statut = actif ») et télécharge leurs photos. */
   @Post('import') @HttpCode(200)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024, files: 1 } }))
@@ -254,7 +254,7 @@ export class AdminProductsController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 } }))
   async addImage(@Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File, @CurrentUser() me: AuthUser) {
     const product = await this.prisma.product.findUniqueOrThrow({ where: { id }, include: { images: true } });
-    if (product.images.length >= 12) throw new AppError(HttpStatus.CONFLICT, 'TOO_MANY_IMAGES', '12 photos au maximum par montre');
+    if (product.images.length >= 12) throw new AppError(HttpStatus.CONFLICT, 'TOO_MANY_IMAGES', '12 photos au maximum par article');
     const saved = await this.uploads.saveImage(file, 'products');
     try {
       const data = await this.prisma.$transaction(async (tx) => {
@@ -314,7 +314,7 @@ export class AdminProductsController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_VIDEO_BYTES, files: 1 } }))
   async addVideo(@Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File, @CurrentUser() me: AuthUser) {
     const product = await this.prisma.product.findUniqueOrThrow({ where: { id }, include: { videos: true } });
-    if (product.videos.length >= 4) throw new AppError(HttpStatus.CONFLICT, 'TOO_MANY_VIDEOS', '4 vidéos au maximum par montre');
+    if (product.videos.length >= 4) throw new AppError(HttpStatus.CONFLICT, 'TOO_MANY_VIDEOS', '4 vidéos au maximum par article');
     const saved = await this.uploads.saveVideo(file);
     try {
       const data = await this.prisma.$transaction(async (tx) => {
@@ -343,13 +343,13 @@ export class AdminProductsController {
     return { data: toDto(data) };
   }
 
-  /* ---------- remise par quantité propre à la montre ---------- */
+  /* ---------- remise par quantité propre à l’article ---------- */
 
-  /** Remplace les paliers de la montre (liste vide : elle revient à la remise générale). */
+  /** Remplace les paliers de l’article (liste vide : elle revient à la remise générale). */
   @Put(':id/quantity-discounts')
   async setQtyDiscounts(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ProductTiersDto, @CurrentUser() me: AuthUser) {
     const sorted = [...dto.tiers].sort((a, b) => a.minQty - b.minQty);
-    if (new Set(sorted.map((t) => t.minQty)).size !== sorted.length) throw new AppError(HttpStatus.BAD_REQUEST, 'VALIDATION_ERROR', 'Deux paliers ont le même nombre de montres');
+    if (new Set(sorted.map((t) => t.minQty)).size !== sorted.length) throw new AppError(HttpStatus.BAD_REQUEST, 'VALIDATION_ERROR', 'Deux paliers ont le même nombre d’articles');
     if (sorted.some((t, i) => i > 0 && t.amountCents <= sorted[i - 1].amountCents)) {
       throw new AppError(HttpStatus.BAD_REQUEST, 'VALIDATION_ERROR', 'Chaque palier doit offrir une remise plus grande que le précédent');
     }
@@ -366,15 +366,15 @@ export class AdminProductsController {
   /* ---------- duplication ---------- */
 
   /**
-   * Copie de la montre en brouillon : textes, prix, caractéristiques, coloris, photos et vidéos
-   * (fichiers recopiés : chaque montre garde les siens). Nouveau SKU, stock à 0, ventes et avis remis à zéro.
+   * Copie de l’article en brouillon : textes, prix, caractéristiques, coloris, photos et vidéos
+   * (fichiers recopiés : chaque article garde les siens). Nouveau SKU, stock à 0, ventes et avis remis à zéro.
    */
   @Post(':id/duplicate')
   async duplicate(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() me: AuthUser) {
     const src = await this.prisma.product.findUniqueOrThrow({ where: { id }, include });
     const sku = await this.freeSku(src.sku);
     const name = `${src.name} (copie)`.slice(0, 160);
-    let slug = slugify(name).slice(0, 170) || 'montre-copie';
+    let slug = slugify(name).slice(0, 170) || 'article-copie';
     for (let i = 2; await this.prisma.product.findUnique({ where: { slug } }); i++) slug = `${slugify(name).slice(0, 165)}-${i}`;
 
     // Fichiers copiés avant la transaction ; supprimés si elle échoue.
@@ -433,7 +433,7 @@ export class AdminProductsController {
   /* ---------- suppression définitive ---------- */
 
   /**
-   * Supprime la montre et ses fichiers (photos, vidéos). Déclinaisons, avis, paniers et favoris partent avec elle ;
+   * Supprime l’article et ses fichiers (photos, vidéos). Déclinaisons, avis, paniers et favoris partent avec elle ;
    * les commandes passées gardent leurs lignes (nom, prix) et les photos qu'elles affichent.
    */
   @Delete(':id')

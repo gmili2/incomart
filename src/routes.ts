@@ -1,18 +1,17 @@
 import type { CategoryId } from './data';
 
 const SLUGS: Record<Exclude<CategoryId, 'all'>, string> = {
-  homme: 'homme',
-  femme: 'femme',
-  auto: 'automatiques',
-  classique: 'classiques',
-  sport: 'sport',
-  coffret: 'avec-coffret',
-  boite: 'boite-simple',
+  maillots: 'maillots',
+  shorts: 'shorts',
+  sweats: 'sweats',
+  baskets: 'baskets',
+  accessoires: 'accessoires',
   new: 'nouveautes',
+  promo: 'promos',
 };
 
-export const shopPath = (cat: CategoryId = 'all') => (cat === 'all' ? '/montres' : `/montres/${SLUGS[cat]}`);
-export const productPath = (id: string) => `/montre/${id}`;
+export const shopPath = (cat: CategoryId = 'all') => (cat === 'all' ? '/produits' : `/produits/${SLUGS[cat]}`);
+export const productPath = (id: string) => `/produit/${id}`;
 
 export function catFromSlug(slug?: string): CategoryId | null {
   if (!slug) return 'all';
@@ -32,5 +31,4 @@ export const PATHS = {
   cgv: '/cgv',
   privacy: '/confidentialite',
   account: '/compte',
-  charte: '/charte-graphique',
 };

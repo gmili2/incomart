@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useCatalog } from '../catalog';
-import { Crumbs, ProductGrid } from '../components/Catalog';
+import { Crumbs, Dial, ProductGrid, iconOf } from '../components/Catalog';
 import { QtyStepper } from '../components/Shell';
 import { BagIcon } from '../components/icons';
 import { fmt, ratingF, stars, type Product as P, type Variant } from '../data';
@@ -12,11 +12,11 @@ import { PATHS, productPath, shopPath } from '../routes';
 import { SHOP_PITCH, setMeta } from '../seo';
 import { lineKey, useStore } from '../store';
 
-const VIEWS = ['Face', 'Trois-quarts', 'Fond saphir', 'Au poignet'];
+const VIEWS = ['Face', 'Dos', 'Détail', 'Porté'];
 const REASSURE = [
-  { t: 'Livraison', d: 'Incluse · 2 à 4 jours' },
-  { t: 'Retours', d: 'Gratuits · 30 jours' },
-  { t: 'Écrin & certificat', d: 'Inclus' },
+  { t: 'Livraison', d: '2 à 4 jours partout au Maroc' },
+  { t: 'Échange de taille', d: 'Sous 7 jours' },
+  { t: 'Paiement', d: 'À la livraison' },
 ];
 type Review = { id: string; author: string; rating: number; title: string | null; comment: string; createdAt: string };
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric' });
@@ -41,12 +41,12 @@ export default function Product() {
   const [zoom, setZoom] = useState(false);
   const [zxy, setZxy] = useState({ x: 50, y: 50 });
   const [qty, setQty] = useState(1);
-  // Offre choisie (1, 2, 3 montres…) et coloris des montres 2, 3… (la montre 1 suit la sélection principale).
-  // ?offre=2 dans le lien (publicités) : l'offre de 2 montres est présélectionnée.
+  // Offre choisie (1, 2, 3 articles…) et coloris des articles 2, 3… (l’article 1 suit la sélection principale).
+  // ?offre=2 dans le lien (publicités) : l'offre de 2 articles est présélectionnée.
   const [params] = useSearchParams();
   const [packWanted, setPack] = useState(() => Number(params.get('offre')) || 1);
   const [extra, setExtra] = useState<string[]>([]);
-  // Choix d'options, mémorisé par montre : changer de fiche repart des valeurs par défaut.
+  // Choix d'options, mémorisé par article : changer de fiche repart des valeurs par défaut.
   const [choice, setChoice] = useState<{ id: string; sel: Record<string, string> }>({ id: '', sel: {} });
   const [reviews, setReviews] = useState<{ id: string; list: Review[] }>({ id: '', list: [] });
 
@@ -55,7 +55,7 @@ export default function Product() {
     if (!p) return;
     const text = `${p.kind ? p.kind + '. ' : ''}${p.desc}`.replace(/\s+/g, ' ');
     setMeta({
-      title: `${p.name} — ${fmt(p.price)} — GMBIJOUX`,
+      title: `${p.name} — ${fmt(p.price)} — INCOMART`,
       description: `${p.name} à ${fmt(p.price)}${p.hasRange ? ' et plus' : ''}. ${text} ${SHOP_PITCH}`.slice(0, 300),
       path: productPath(p.id),
     });
@@ -78,7 +78,7 @@ export default function Product() {
       <section style={{ padding: `${L.pageTop} ${L.px} 0`, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
         {catalog.status === 'error' ? (
           <>
-            <p style={{ margin: 0, fontSize: 16, color: 'var(--muted)' }}>Cette montre est momentanément indisponible.</p>
+            <p style={{ margin: 0, fontSize: 16, color: 'var(--muted)' }}>Cet article est momentanément indisponible.</p>
             <button className="btn btn-outline" onClick={catalog.reload} style={{ height: 48, padding: '0 24px' }}>Réessayer</button>
           </>
         ) : <div className="ph" aria-busy="true" style={{ width: '100%', maxWidth: 620, aspectRatio: '1', opacity: 0.6 }} />}
@@ -105,7 +105,7 @@ export default function Product() {
   const price = variant?.price ?? p.price;
   const old = variant ? variant.old : p.old;
   const canBuy = p.purchasable && (p.variants.length ? !!variant?.inStock : p.inStock);
-  const stockText = !p.purchasable ? 'Pièce présentée en vitrine' : !p.variants.length ? p.stock : !variant ? 'Combinaison indisponible' : !variant.inStock ? 'Épuisé dans cette version' : variant.lowStock ? 'Dernières pièces disponibles' : 'En stock — expédiée sous 24 h';
+  const stockText = !p.purchasable ? 'Pièce présentée en vitrine' : !p.variants.length ? p.stock : !variant ? 'Combinaison indisponible' : !variant.inStock ? 'Épuisé dans cette version' : variant.lowStock ? 'Dernières pièces disponibles' : 'En stock — expédié sous 24 h';
   const photos = p.photos.length ? p.photos : p.image ? [p.image] : [];
   // Galerie : les photos puis les vidéos ; `img` désigne un élément de cette suite.
   const gallery = [...photos.map((src) => ({ src, video: false })), ...p.videos.map((src) => ({ src, video: true }))];
@@ -116,7 +116,7 @@ export default function Product() {
   const ref = variant?.sku ?? p.sku;
   const buy = () => { if (canBuy) addPack(); };
   /* ---------- offres par quantité (« 2 pour 229 DH ») ---------- */
-  // Paliers de ce modèle, sinon paliers généraux (même règle que le serveur, montre seule dans le panier).
+  // Paliers de ce modèle, sinon paliers généraux (même règle que le serveur, article seul dans le panier).
   const tiers = p.qtyTiers.length ? p.qtyTiers : catalog.qtyTiers;
   const offers = p.purchasable && tiers.length ? [...new Set([1, ...tiers.map((t) => t.minQty)])].sort((a, b) => a - b).slice(0, 5) : [];
   const pack = offers.includes(packWanted) ? packWanted : 1;
@@ -138,7 +138,7 @@ export default function Product() {
     // Pixel Meta : un seul ajout au panier pour le lot, à son prix réel (remise comprise).
     track('AddToCart', { content_ids: [p.id], content_name: p.name, content_type: 'product', num_items: pack, value: packTotal, currency: 'MAD' });
   };
-  /** Achat direct (publicités) : le panier reçoit exactement l'offre choisie pour cette montre, puis le formulaire de commande. */
+  /** Achat direct (publicités) : le panier reçoit exactement l'offre choisie pour cet article, puis le formulaire de commande. */
   const buyNow = () => {
     if (!canBuy) return;
     for (const l of cart.filter((x) => x.id === p.id)) remove(lineKey(l.id, l.variantId));
@@ -152,22 +152,22 @@ export default function Product() {
   };
   const similar = catalog.products.filter((x) => x.id !== p.id && x.cats.some((c) => p.cats.includes(c) && c !== 'new')).slice(0, 4);
   const specs = [
-    ['Mouvement', p.movement], ['Dimensions', p.dims], ['Bracelet', sel.Bracelet ?? p.strap], ['Verre', p.glass],
-    ['Étanchéité', p.water], ['Garantie', '2 ans, internationale'], ['Référence', ref],
-  ];
+    ['Matière', p.movement], ['Coupe', p.strap], ['Tailles', p.dims], ['Entretien', p.glass],
+    ['Personnalisation', p.water], ['Référence', ref],
+  ].filter(([, v]) => v);
   const shownReviews = reviews.id === p.id ? reviews.list : [];
   const label: React.CSSProperties = { fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--graphite)' };
 
   return (
     <>
       <section style={{ padding: `24px ${L.px} 0` }}>
-        <Crumbs items={[['Accueil', '/'], ['Montres', shopPath('all')], [p.name]]} />
+        <Crumbs items={[['Accueil', '/'], ['Boutique', shopPath('all')], [p.name]]} />
         <div style={{ display: 'grid', gridTemplateColumns: L.split, gap: L.pGap, marginTop: 24, alignItems: 'start' }}>
           <div data-reveal style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {mainVideo ? (
-              <div className="ph" style={{ aspectRatio: '1', backgroundImage: 'none', background: '#111', overflow: 'hidden' }}>
+              <div className="ph" style={{ aspectRatio: '1', backgroundImage: 'none', background: '#000', overflow: 'hidden' }}>
                 <video key={mainVideo} src={mainVideo} controls autoPlay muted loop playsInline preload="metadata"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#111' }} />
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#000' }} />
               </div>
             ) : (
             <div
@@ -176,18 +176,16 @@ export default function Product() {
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setZoom((z) => !z); } }}
               onMouseMove={(e) => zoom && setZxy(pos(e))}
               onMouseLeave={() => zoom && setZoom(false)}
-              className="ph" style={{ aspectRatio: '1', backgroundImage: 'none', cursor: zoom ? 'zoom-out' : 'zoom-in', background: mainPhoto ? '#f5f4f1' : 'transparent' }}
+              className="ph" style={{ aspectRatio: '1', backgroundImage: 'none', cursor: zoom ? 'zoom-out' : 'zoom-in', background: mainPhoto ? '#161616' : 'transparent' }}
             >
               <div className="ph" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: zoom ? 'scale(2.2)' : 'scale(1)', transformOrigin: `${zxy.x}% ${zxy.y}%`, transition: 'transform .6s var(--ease)' }}>
                 {mainPhoto
                   ? <img src={mainPhoto} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
-                  : <div style={{ width: '54%', aspectRatio: '1', borderRadius: '50%', border: '1px solid rgba(17,17,17,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <div style={{ width: '72%', aspectRatio: '1', borderRadius: '50%', border: '1px solid rgba(17,17,17,.1)' }} />
-                    </div>
+                  : <Dial size="36%" path={iconOf(p)} />
                 }
               </div>
               <span className="ph-caption">photo · {p.name}{variant ? ' ' + variant.values.map((v) => v.label).join(' · ') : ''} — {photos.length ? `${shown + 1} / ${gallery.length}` : VIEWS[Math.max(0, img)]}</span>
-              <span style={{ position: 'absolute', right: 14, top: 14, padding: '7px 12px', borderRadius: 999, background: 'rgba(255,255,255,.9)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              <span style={{ position: 'absolute', right: 14, top: 14, padding: '7px 12px', borderRadius: 999, background: 'rgba(10,10,10,.85)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 {zoom ? 'Zoom × 2,2' : 'Cliquer pour zoomer'}
               </span>
             </div>
@@ -197,13 +195,13 @@ export default function Product() {
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(gallery.length, 6)},minmax(0,1fr))`, gap: 10 }}>
                 {gallery.map(({ src, video }, i) => (
                   <button key={src} className="ph" onClick={() => { setImg(i); setZoom(false); }} aria-label={video ? `Vidéo ${i - photos.length + 1}` : `Photo ${i + 1}`} aria-pressed={i === shown}
-                    style={{ aspectRatio: '1', padding: 0, cursor: 'pointer', backgroundImage: 'none', background: video ? '#111' : '#f5f4f1', border: `1px solid ${i === shown ? '#111' : 'transparent'}`, overflow: 'hidden', position: 'relative' }}>
+                    style={{ aspectRatio: '1', padding: 0, cursor: 'pointer', backgroundImage: 'none', background: video ? '#000' : '#161616', border: `1px solid ${i === shown ? 'var(--ink)' : 'transparent'}`, overflow: 'hidden', position: 'relative' }}>
                     {video
                       ? <>
                           {/* #t=0.1 : première image de la vidéo comme vignette. */}
                           <video src={`${src}#t=0.1`} muted playsInline preload="metadata" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                          <span aria-hidden style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid #111', marginLeft: 3 }} />
+                          <span aria-hidden style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', width: 30, height: 30, borderRadius: '50%', background: 'rgba(10,10,10,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: '10px solid var(--ink)', marginLeft: 3 }} />
                           </span>
                         </>
                       : <img src={src} alt="" loading="lazy" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
@@ -215,10 +213,10 @@ export default function Product() {
               {VIEWS.map((v, i) => (
                 <button
                   key={v} className="ph" onClick={() => { setImg(i); setZoom(false); }} aria-label={`Vue ${v}`} aria-pressed={i === shown}
-                  style={{ aspectRatio: '1', padding: 0, cursor: 'pointer', backgroundImage: p.image ? 'none' : 'repeating-linear-gradient(135deg,rgba(17,17,17,.045) 0 1px,transparent 1px 9px)', background: p.image && i === 0 ? '#f5f4f1' : undefined, border: `1px solid ${i === shown ? '#111' : 'transparent'}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', overflow: 'hidden', position: 'relative' }}
+                  style={{ aspectRatio: '1', padding: 0, cursor: 'pointer', backgroundImage: p.image ? 'none' : 'repeating-linear-gradient(135deg,rgba(245,245,245,.045) 0 1px,transparent 1px 9px)', background: p.image && i === 0 ? '#161616' : undefined, border: `1px solid ${i === shown ? 'var(--ink)' : 'transparent'}`, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', overflow: 'hidden', position: 'relative' }}
                 >
                   {p.image && i === 0 && <img src={p.image} alt={v} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />}
-                  <span style={{ position: 'relative', zIndex: 1, padding: 8, fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: p.image ? 'rgba(17,17,17,.7)' : 'var(--graphite)', textAlign: 'left' }}>{v}</span>
+                  <span style={{ position: 'relative', zIndex: 1, padding: 8, fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: p.image ? 'rgba(245,245,245,.7)' : 'var(--graphite)', textAlign: 'left' }}>{v}</span>
                 </button>
               ))}
             </div>
@@ -227,7 +225,7 @@ export default function Product() {
 
           <div data-reveal style={{ position: L.sticky, top: 110, display: 'flex', flexDirection: 'column', gap: 22, paddingTop: 6 }}>
             <span className="mono" style={{ fontSize: 10.5 }}>Collection {p.col} · Réf. {ref}</span>
-            <h1 className="display" style={{ margin: '-8px 0 0', fontSize: L.h2 }}>{p.name}</h1>
+            <h1 className="display" style={{ margin: '-8px 0 0', fontSize: L.mobile ? 44 : 56, textTransform: 'uppercase' }}>{p.name}</h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
               <span style={{ letterSpacing: '.12em' }}>{stars(p.rating)}</span><span>{ratingF(p.rating)}</span>
               <span style={{ color: 'var(--graphite)' }}>· {p.reviews} avis</span>
@@ -237,20 +235,20 @@ export default function Product() {
               {old && (
                 <>
                   <span style={{ fontSize: 16, color: 'var(--graphite)', textDecoration: 'line-through' }}>{fmt(old)}</span>
-                  <span style={{ padding: '5px 10px', borderRadius: 999, background: '#111', color: '#fff', fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.08em' }}>{pct(price, old)}</span>
+                  <span style={{ padding: '5px 10px', borderRadius: 999, background: 'var(--ink)', color: 'var(--paper)', fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '.08em' }}>{pct(price, old)}</span>
                 </>
               )}
               <span style={{ flexBasis: '100%', fontSize: 12.5, color: 'var(--graphite)' }}>TTC · paiement à la livraison ou par virement</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: canBuy ? '#111' : 'var(--faint)', boxShadow: '0 0 0 4px var(--line)' }} />{stockText}
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: canBuy ? 'var(--ink)' : 'var(--faint)', boxShadow: '0 0 0 4px var(--line)' }} />{stockText}
             </div>
             <p style={{ margin: 0, fontSize: 15.5, lineHeight: 1.7, color: 'var(--body)', textWrap: 'pretty' }}>{p.desc}</p>
             {(p.options ?? []).map((o) => {
               const isColor = o.values.some((v) => v.colorHex);
               return (
                 <div key={o.name} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, ...label, color: '#111' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, ...label, color: 'var(--ink)' }}>
                     <span style={{ color: 'var(--graphite)' }}>{o.name}</span><span style={{ textAlign: 'right' }}>{sel[o.name]}</span>
                   </div>
                   <div role="radiogroup" aria-label={o.name} style={{ display: 'flex', flexWrap: 'wrap', gap: isColor ? 12 : 8 }}>
@@ -260,8 +258,8 @@ export default function Product() {
                       const title = v.label + (ok ? '' : ' — épuisé');
                       return isColor ? (
                         <button key={v.label} role="radio" aria-checked={on} aria-label={title} title={title} onClick={() => choose(o.name, v.label)}
-                          style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', padding: 0, cursor: 'pointer', background: v.colorHex ?? '#fff', border: 0, boxShadow: on ? '0 0 0 2px var(--ivory), 0 0 0 3px #111' : 'inset 0 0 0 1px rgba(17,17,17,.18)', opacity: ok ? 1 : 0.45, transition: 'box-shadow .25s' }}>
-                          {!ok && <span aria-hidden style={{ position: 'absolute', left: '50%', top: 4, bottom: 4, width: 1, background: '#111', transform: 'rotate(45deg)' }} />}
+                          style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', padding: 0, cursor: 'pointer', background: v.colorHex ?? 'var(--paper)', border: 0, boxShadow: on ? '0 0 0 2px var(--ivory), 0 0 0 3px var(--accent)' : 'inset 0 0 0 1px rgba(245,245,245,.18)', opacity: ok ? 1 : 0.45, transition: 'box-shadow .25s' }}>
+                          {!ok && <span aria-hidden style={{ position: 'absolute', left: '50%', top: 4, bottom: 4, width: 1, background: 'var(--ink)', transform: 'rotate(45deg)' }} />}
                         </button>
                       ) : (
                         <button key={v.label} role="radio" aria-checked={on} title={title} className={`chip${on ? ' active' : ''}`} onClick={() => choose(o.name, v.label)}
@@ -281,10 +279,10 @@ export default function Product() {
                     const on = pack === n;
                     return (
                       <button key={n} role="radio" aria-checked={on} onClick={() => setPack(n)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, cursor: 'pointer', textAlign: 'left', background: on ? '#fff' : 'transparent', border: `1.5px solid ${on ? '#111' : 'var(--line-strong)'}`, transition: 'border-color .2s' }}>
-                        <span aria-hidden style={{ width: 18, height: 18, borderRadius: '50%', flex: 'none', border: `1.5px solid ${on ? '#111' : 'var(--line-strong)'}`, boxShadow: on ? 'inset 0 0 0 4px #fff' : 'none', background: on ? '#111' : 'transparent' }} />
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 14, cursor: 'pointer', textAlign: 'left', background: on ? 'var(--paper)' : 'transparent', border: `1.5px solid ${on ? 'var(--ink)' : 'var(--line-strong)'}`, transition: 'border-color .2s' }}>
+                        <span aria-hidden style={{ width: 18, height: 18, borderRadius: '50%', flex: 'none', border: `1.5px solid ${on ? 'var(--ink)' : 'var(--line-strong)'}`, boxShadow: on ? 'inset 0 0 0 4px var(--paper)' : 'none', background: on ? 'var(--ink)' : 'transparent' }} />
                         <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
-                          <span style={{ fontSize: 15, fontWeight: 600 }}>{n === 1 ? '1 montre' : `${n} montres`}</span>
+                          <span style={{ fontSize: 15, fontWeight: 600 }}>{n === 1 ? '1 article' : `${n} articles`}</span>
                           {total < sum && <span style={{ fontSize: 12.5, color: 'var(--graphite)' }}>Économisez {fmt(sum - total)}</span>}
                         </span>
                         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
@@ -296,15 +294,15 @@ export default function Product() {
                   })}
                 </div>
                 {pack > 1 && p.variants.length > 1 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 16px', background: '#fff', border: '1px solid var(--line)', borderRadius: 14 }}>
-                    <span style={{ ...label, color: 'var(--graphite)' }}>Couleur de chaque montre</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 16px', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: 14 }}>
+                    <span style={{ ...label, color: 'var(--graphite)' }}>Choix de chaque article</span>
                     {unitVariants(pack).map((uv, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 13.5, minWidth: 74 }}>Montre {i + 1}</span>
+                        <span style={{ fontSize: 13.5, minWidth: 74 }}>Article {i + 1}</span>
                         {i === 0 ? (
                           <span style={{ fontSize: 13.5, color: 'var(--graphite)' }}>{uv?.values.map((x) => x.label).join(' · ')} <span style={{ fontSize: 12 }}>(choisie ci-dessus)</span></span>
                         ) : (
-                          <span role="radiogroup" aria-label={`Couleur de la montre ${i + 1}`} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          <span role="radiogroup" aria-label={`Choix de l’article ${i + 1}`} style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                             {inStockVariants.map((v) => {
                               const on = uv?.id === v.id;
                               const hex = v.values.find((x) => x.colorHex)?.colorHex;
@@ -312,7 +310,7 @@ export default function Product() {
                               const pick = () => setExtra((xs) => { const next = [...xs]; next[i - 1] = v.id; return next; });
                               return hex ? (
                                 <button key={v.id} role="radio" aria-checked={on} aria-label={name} title={name} onClick={pick}
-                                  style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, cursor: 'pointer', background: hex, border: 0, boxShadow: on ? '0 0 0 2px var(--ivory), 0 0 0 3px #111' : 'inset 0 0 0 1px rgba(17,17,17,.18)' }} />
+                                  style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, cursor: 'pointer', background: hex, border: 0, boxShadow: on ? '0 0 0 2px var(--ivory), 0 0 0 3px var(--accent)' : 'inset 0 0 0 1px rgba(245,245,245,.18)' }} />
                               ) : (
                                 <button key={v.id} role="radio" aria-checked={on} className={`chip${on ? ' active' : ''}`} onClick={pick} style={{ height: 36, padding: '0 14px', fontSize: 12.5 }}>{name}</button>
                               );
@@ -348,7 +346,7 @@ export default function Product() {
 
       <section data-reveal style={{ padding: `${L.sec} ${L.px} 0`, display: 'grid', gridTemplateColumns: L.split2, gap: L.pGap }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <span className="mono">Fiche technique</span>
+          <span className="eyebrow">Détails & matière</span>
           <h2 className="display" style={{ fontSize: L.h3 }}>Caractéristiques</h2>
         </div>
         <dl style={{ margin: 0 }}>
@@ -363,8 +361,8 @@ export default function Product() {
 
       <section data-reveal style={{ padding: `${L.sec} ${L.px} 0`, display: 'grid', gridTemplateColumns: L.split2, gap: L.pGap }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-start' }}>
-          <span className="mono">Avis clients</span>
-          <span style={{ fontStretch: '125%', fontSize: 64, fontWeight: 500, lineHeight: 1 }}>{ratingF(p.rating)}</span>
+          <span className="eyebrow">Avis clients</span>
+          <span style={{ fontFamily: 'var(--display-font)', fontSize: 64, fontWeight: 800, lineHeight: 1 }}>{ratingF(p.rating)}</span>
           <span style={{ letterSpacing: '.14em' }}>{stars(p.rating)}</span>
           <span style={{ fontSize: 13.5, color: 'var(--graphite)' }}>Basé sur {p.reviews} avis vérifiés</span>
           <button className="btn btn-outline" style={{ marginTop: 8, height: 48, padding: '0 24px', fontSize: 11.5 }}>Écrire un avis</button>
@@ -387,8 +385,8 @@ export default function Product() {
       {similar.length > 0 && (
         <section style={{ padding: `${L.sec} ${L.px} 0`, display: 'flex', flexDirection: 'column', gap: 32 }}>
           <div data-reveal style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <span className="mono">Dans le même esprit</span>
-            <h2 className="display" style={{ fontSize: L.h3 }}>Produits similaires</h2>
+            <span className="eyebrow">Complète ta tenue</span>
+            <h2 className="display" style={{ fontSize: L.h3 }}>Tu vas aimer aussi</h2>
           </div>
           <ProductGrid items={similar} />
         </section>
@@ -396,14 +394,14 @@ export default function Product() {
 
       {L.mobile && (
         // Barre d'achat mobile : prix et coloris, ajout au panier (icône) et achat direct vers le formulaire de commande.
-        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 45, background: 'rgba(247,247,245,.96)', backdropFilter: 'blur(12px)', borderTop: '1px solid var(--line)', padding: '10px 16px calc(10px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 45, background: 'rgba(10,10,10,.94)', backdropFilter: 'blur(12px)', borderTop: '1px solid var(--line)', padding: '10px 16px calc(10px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, flex: 'none', maxWidth: '34%' }}>
             <span style={{ fontSize: 16, fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(packTotal)}</span>
             {packTotal < packSum
               ? <span style={{ fontSize: 12, color: 'var(--graphite)', textDecoration: 'line-through' }}>{fmt(packSum)}</span>
               : old != null && old > price && units === 1 && <span style={{ fontSize: 12, color: 'var(--graphite)', textDecoration: 'line-through' }}>{fmt(old)}</span>}
             <span style={{ fontSize: 12, color: 'var(--graphite)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {units > 1 ? `${units} montres` : variant && (p.options ?? []).length > 0 ? variant.values.map((v) => v.label).join(' · ') : ''}
+              {units > 1 ? `${units} articles` : variant && (p.options ?? []).length > 0 ? variant.values.map((v) => v.label).join(' · ') : ''}
             </span>
           </div>
           {canBuy ? (

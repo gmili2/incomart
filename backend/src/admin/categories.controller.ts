@@ -59,7 +59,7 @@ export class AdminCategoriesController {
   @Delete(':id') @HttpCode(204)
   async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() me: AuthUser) {
     const c = await this.prisma.category.findUniqueOrThrow({ where: { id }, select });
-    if (c._count.products) throw new AppError(HttpStatus.CONFLICT, 'CATEGORY_IN_USE', `${c._count.products} montre(s) dans cette catégorie : déplacez-les d’abord`);
+    if (c._count.products) throw new AppError(HttpStatus.CONFLICT, 'CATEGORY_IN_USE', `${c._count.products} article(s) dans cette catégorie : déplacez-les d’abord`);
     await this.prisma.$transaction(async (tx) => {
       await tx.category.delete({ where: { id } });
       await this.audit.log(me.id, 'category.delete', 'category', id, { name: c.name }, tx);
